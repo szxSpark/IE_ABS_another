@@ -91,6 +91,8 @@ class Dataset(object):
 
         lengths = [len(x) for x in data]
         max_length = max(lengths)
+        print(len(data), max_length)
+        input()
         enc_batch_extend_vocab = None
         dec_batch_extend_vocab = None
         extra_zeros = None
@@ -121,7 +123,9 @@ class Dataset(object):
         if self.is_coverage:
             coverage = torch.zeros(len(data), max_length)
 
+
         out = data[0].new(len(data), max_length).fill_(Constants.PAD)
+
         for i in range(len(data)):
             data_length = data[i].size(0)
             offset = max_length - data_length if align_right else 0
