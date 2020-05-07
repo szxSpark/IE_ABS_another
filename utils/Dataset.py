@@ -89,7 +89,7 @@ class Dataset(object):
             # input()
 
 
-        lengths = [x.size(0) for x in data]
+        lengths = [len(x) for x in data]
         max_length = max(lengths)
         enc_batch_extend_vocab = None
         dec_batch_extend_vocab = None
