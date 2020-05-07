@@ -131,6 +131,8 @@ class Encoder(nn.Module):
 
         # ------ svo
         entity_out = self._encode_entity(svo_list)  # B, entity_num, 300
+        print(entity_out.size())
+
         u = F.tanh(self.svo_proj(entity_out))  # B, entity_num, 300
         entity_attention = torch.matmul(u, self.svo_para).squeeze()  # B,entity_num,300   300, 1
         print(entity_attention.size())
