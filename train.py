@@ -346,12 +346,13 @@ def trainModel(model, translator, trainData, validData, vocab_dicts, optim):
             # type(batch): tuple    len: 2
             #   type(batch[0]): tuple len: 7
             #       batch[0][0].size()  L, B        source
-            #       batch[0][1].size()  1, B        length, 降序
-            #       batch[0][2].size()  L, B        source_extend_vocab
-            #       batch[0][3].size()  oovs, B     source的最大oovs数目 zeros_expand
-            #       batch[0][4]         list(), len=B, article_oovs
-            #       batch[0][5]         L, B        coverage
-            #       batch[0][6]         L, B        src_sentence_flag_vec
+            #       batch[0][1].size()  list        svo
+            #       batch[0][2].size()  1, B        length, 降序
+            #       batch[0][3].size()  L, B        source_extend_vocab
+            #       batch[0][4].size()  oovs, B     source的最大oovs数目 zeros_expand
+            #       batch[0][5]         list(), len=B, article_oovs
+            #       batch[0][6]         L, B        coverage
+            #       batch[0][7]         L, B        src_sentence_flag_vec
 
             #   type(batch[1]): tuple len: 2
             #       batch[1][0].size()  decL, B        target

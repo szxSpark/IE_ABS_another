@@ -80,19 +80,11 @@ class Dataset(object):
         if is_src:
             src_data, svo_data = data
             data = src_data
-            source = pad_batch_tensorize(data, pad=Constants.PAD, cuda=self.cuda)
-            print(source.size())
-            # id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
-            #            svo_data]  # 每个元素，len(svo), word_num, 1个文章
-            # for a in id_svos:
-            #     print(a.size())  #11
-            # input()
-
+            id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
+                       svo_data]  # 每个元素，len(svo), word_num, 1个文章
 
         lengths = [len(x) for x in data]
         max_length = max(lengths)
-        print(len(data), max_length)
-        input()
         enc_batch_extend_vocab = None
         dec_batch_extend_vocab = None
         extra_zeros = None
@@ -104,40 +96,31 @@ class Dataset(object):
                 article_oovs = self.src_oovs_list[start_idx:end_idx]
                 max_art_oovs = max([len(_article_oovs) for _article_oovs in article_oovs])  # 最长的oovs长度
                 src_extend_vocab = self.src_extend_vocab[start_idx:end_idx]
-                enc_batch_extend_vocab = data[0].new(len(data), max_length).fill_(Constants.PAD)
-                for i in range(len(data)):
-                    data_length = data[i].size(0)
-                    offset = max_length - data_length if align_right else 0
-                    enc_batch_extend_vocab[i].narrow(0, offset, data_length).copy_(torch.LongTensor(src_extend_vocab[i]))
+                enc_batch_extend_vocab = pad_batch_tensorize(src_extend_vocab, pad=Constants.PAD, cuda=self.cuda)
+                # enc_batch_extend_vocab = data[0].new(len(data), max_length).fill_(Constants.PAD)
+                # for i in range(len(data)):
+                #     data_length = data[i].size(0)
+                #     offset = max_length - data_length if align_right else 0
+                #     enc_batch_extend_vocab[i].narrow(0, offset, data_length).copy_(torch.LongTensor(src_extend_vocab[i]))
                 if max_art_oovs > 0:
                     extra_zeros = torch.zeros((self.batchSize, max_art_oovs))
             else:  # tgt
                 tgt_extend_vocab = self.tgt_extend_vocab[start_idx:end_idx]
-                dec_batch_extend_vocab = data[0].new(len(data), max_length).fill_(Constants.PAD)
-                for i in range(len(data)):
-                    data_length = data[i].size(0)
-                    offset = max_length - data_length if align_right else 0
-                    dec_batch_extend_vocab[i].narrow(0, offset, data_length).copy_(
-                        torch.LongTensor(tgt_extend_vocab[i]))
+                dec_batch_extend_vocab = pad_batch_tensorize(tgt_extend_vocab, pad=Constants.PAD, cuda=self.cuda)
+                # dec_batch_extend_vocab = data[0].new(len(data), max_length).fill_(Constants.PAD)
+                # for i in range(len(data)):
+                #     data_length = data[i].size(0)
+                #     offset = max_length - data_length if align_right else 0
+                #     dec_batch_extend_vocab[i].narrow(0, offset, data_length).copy_(
+                #         torch.LongTensor(tgt_extend_vocab[i]))
 
         if self.is_coverage:
             coverage = torch.zeros(len(data), max_length)
 
-
-        out = data[0].new(len(data), max_length).fill_(Constants.PAD)
-
-        for i in range(len(data)):
-            data_length = data[i].size(0)
-            offset = max_length - data_length if align_right else 0
-            out[i].narrow(0, offset, data_length).copy_(data[i])
-        print(out.size())
-        print(out)
-        print(source)
-        input()
-
+        out = pad_batch_tensorize(data, pad=Constants.PAD, cuda=self.cuda)
         # out, enc_batch_extend_vocab 的 size相同
         if include_lengths and is_src:  # src
-            return out, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths
+            return out, id_svos, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths
         if not include_lengths and not is_src:  # tgt
             return out, dec_batch_extend_vocab
 
@@ -146,7 +129,7 @@ class Dataset(object):
 
         start_idx = index * self.batchSize
         end_idx = (index + 1) * self.batchSize
-        srcBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths = self._batchify(
+        srcBatch, id_svos, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths = self._batchify(
             [self.src[start_idx:end_idx], self.svo[start_idx:end_idx]],
             start_idx=index * self.batchSize,
             end_idx=(index + 1) * self.batchSize,
@@ -166,39 +149,39 @@ class Dataset(object):
         if tgtBatch is None:
             if self.pointer_gen:
                 if extra_zeros is not None:
-                    batch = zip(indices, srcBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage)
+                    batch = zip(indices, srcBatch, id_svos, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage)
                 else:
-                    batch = zip(indices, srcBatch, enc_batch_extend_vocab, article_oovs, coverage, )
+                    batch = zip(indices, srcBatch, id_svos, enc_batch_extend_vocab, article_oovs, coverage, )
             else:
-                batch = zip(indices, srcBatch, )
+                batch = zip(indices, srcBatch, id_svos)
         else:
             if self.pointer_gen:
                 if extra_zeros is not None:
-                    batch = zip(indices, srcBatch, tgtBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, dec_batch_extend_vocab)
+                    batch = zip(indices, srcBatch, id_svos, tgtBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, dec_batch_extend_vocab)
                 else:
-                    batch = zip(indices, srcBatch, tgtBatch, enc_batch_extend_vocab, article_oovs, coverage, dec_batch_extend_vocab)
+                    batch = zip(indices, srcBatch, id_svos, tgtBatch, enc_batch_extend_vocab, article_oovs, coverage, dec_batch_extend_vocab)
             else:
-                batch = zip(indices, srcBatch, tgtBatch,)
+                batch = zip(indices, srcBatch, id_svos, tgtBatch,)
 
         batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
         if tgtBatch is None:
             if self.pointer_gen:
                 if extra_zeros is not None:
-                    indices, srcBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, = zip(*batch)
+                    indices, srcBatch, id_svos, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, = zip(*batch)
                 else:
-                    indices, srcBatch, enc_batch_extend_vocab, article_oovs, coverage, = zip(*batch)
+                    indices, srcBatch, id_svos, enc_batch_extend_vocab, article_oovs, coverage, = zip(*batch)
                     extra_zeros = None
             else:
-                indices, srcBatch,  = zip(*batch)
+                indices, srcBatch, id_svos = zip(*batch)
         else:
             if self.pointer_gen:
                 if extra_zeros is not None:
-                    indices, srcBatch, tgtBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, dec_batch_extend_vocab = zip(*batch)
+                    indices, srcBatch, id_svos, tgtBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, dec_batch_extend_vocab = zip(*batch)
                 else:
-                    indices, srcBatch, tgtBatch, enc_batch_extend_vocab, article_oovs, coverage, dec_batch_extend_vocab = zip(*batch)
+                    indices, srcBatch, id_svos, tgtBatch, enc_batch_extend_vocab, article_oovs, coverage, dec_batch_extend_vocab = zip(*batch)
                     extra_zeros = None
             else:
-                indices, srcBatch, tgtBatch, = zip(*batch)
+                indices, srcBatch, id_svos, tgtBatch, = zip(*batch)
 
         def wrap(b):
             if b is None:
@@ -209,7 +192,7 @@ class Dataset(object):
             return b
 
         lengths = torch.LongTensor(lengths).view(1, -1)
-        return (wrap(srcBatch), lengths, wrap(enc_batch_extend_vocab), wrap(extra_zeros), article_oovs, wrap(coverage)), \
+        return (wrap(srcBatch), id_svos, lengths, wrap(enc_batch_extend_vocab), wrap(extra_zeros), article_oovs, wrap(coverage)), \
                (wrap(tgtBatch), wrap(dec_batch_extend_vocab)), \
                indices
 
@@ -218,8 +201,8 @@ class Dataset(object):
 
     def shuffle(self):
         if self.pointer_gen:
-            data = list(zip(self.src, self.tgt, self.src_extend_vocab, self.tgt_extend_vocab, self.src_oovs_list))
-            self.src, self.tgt, self.src_extend_vocab, self.tgt_extend_vocab, self.src_oovs_list = zip(*[data[i] for i in torch.randperm(len(data))])
+            data = list(zip(self.src, self.svo, self.tgt, self.src_extend_vocab, self.tgt_extend_vocab, self.src_oovs_list))
+            self.src, self.svo, self.tgt, self.src_extend_vocab, self.tgt_extend_vocab, self.src_oovs_list = zip(*[data[i] for i in torch.randperm(len(data))])
         else:
-            data = list(zip(self.src, self.tgt))
-            self.src, self.tgt = zip(*[data[i] for i in torch.randperm(len(data))])
+            data = list(zip(self.src, self.svo, self.tgt))
+            self.src, self.svo, self.tgt = zip(*[data[i] for i in torch.randperm(len(data))])

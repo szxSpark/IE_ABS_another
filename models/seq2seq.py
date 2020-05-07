@@ -30,18 +30,16 @@ class NMTModel(nn.Module):
         return context.data.new(*h_size).zero_()
 
     def forward(self, input):
-        """
-        input: (wrap(srcBatch), wrap(srcBioBatch), lengths), (wrap(tgtBatch), wrap(copySwitchBatch), wrap(copyTgtBatch))
-        """
         # type(input): tuple    len: 2
         #   type(input[0]): tuple len: 6
         #       input[0][0].size()  L, B        source
-        #       input[0][1].size()  1, B        length, 降序
-        #       input[0][2].size()  L, B        source_extend_vocab
-        #       input[0][3].size()  oovs, B     source的最大oovs zeros
-        #       input[0][4]         list(), len=B, article_oovs
-        #       input[0][5]         L, B        coverage
-        #       input[0][6]         L, B        src_sentence_flag_vec
+        #       input[0][1].size()  L, B        svo
+        #       input[0][2].size()  1, B        length, 降序
+        #       input[0][3].size()  L, B        source_extend_vocab
+        #       input[0][4].size()  oovs, B     source的最大oovs zeros
+        #       input[0][5]         list(), len=B, article_oovs
+        #       input[0][6]         L, B        coverage
+        #       input[0][7]         L, B        src_sentence_flag_vec
 
         #   type(input[1]): tuple len: 1
         #       input[1][0].size()  decL, B        target
@@ -49,7 +47,10 @@ class NMTModel(nn.Module):
         src = input[0]
         tgt = input[1][0][:-1]  # exclude last target from inputs
         src_pad_mask = src[0].data.eq(Constants.PAD).transpose(0, 1).float()  # B, L
-        enc_hidden, context = self.encoder(src)  # (2, B, H) (L, B, 2*H)
+        svo_list = src[1]
+        print(svo_list)
+        input()
+        enc_hidden, context = self.encoder(src, svo_list)  # (2, B, H) (L, B, 2*H)
         # enc_hidden是rnn的最后一个时间戳
         # context是经过门过滤后的每个词的编码
         init_att = self.make_init_att(context)  # (B, 2*H)  # 都是0
