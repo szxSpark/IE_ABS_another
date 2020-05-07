@@ -68,7 +68,7 @@ class Dataset(object):
 
     def _batchify(self, data, start_idx, end_idx, align_right=False, include_lengths=False, is_src=True):
 
-        # source = pad_batch_tensorize(sources, pad=Constants.PAD, cuda=self.cuda)
+        source = pad_batch_tensorize(sources, pad=Constants.PAD, cuda=self.cuda)
         # tar_in = pad_batch_tensorize(tar_ins, pad=Constants.PAD, cuda=self.cuda)
         # target = pad_batch_tensorize(targets, pad=Constants.PAD, cuda=self.cuda)  # ext
         # ext_src = pad_batch_tensorize(ext_srcs, pad=Constants.PAD, cuda=self.cuda)  # ext
@@ -80,9 +80,10 @@ class Dataset(object):
         if is_src:
             src_data, svo_data = data
             data = src_data
-            print(src_data)
-            print(svo_data)
+            source = pad_batch_tensorize(data, pad=Constants.PAD, cuda=self.cuda)
+            print(source.size())
             input()
+
 
         lengths = [x.size(0) for x in data]
         max_length = max(lengths)
