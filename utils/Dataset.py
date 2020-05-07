@@ -85,7 +85,7 @@ class Dataset(object):
             id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
                        svo_data]  # 每个元素，len(svo), word_num, 1个文章
             for a in id_svos:
-                print(a.size()) #
+                print(a.size())  #11
             input()
 
 
