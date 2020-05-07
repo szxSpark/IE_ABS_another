@@ -51,9 +51,10 @@ class Encoder(nn.Module):
                                num_layers=opt.layers,
                                dropout=opt.dropout,
                                bidirectional=True)
-        self.context_para = nn.Parameter(torch.FloatTensor(self.hidden_size * 2, 1))
-        self.context_proj = nn.Linear(self.hidden_size * 2, self.hidden_size * 2, bias=True)
-        self.selective_gate = nn.Linear(self.hidden_size * 2 * 3, self.hidden_size * 2)
+        self.svo_para = nn.Parameter(torch.FloatTensor(300, 1))
+        self.svo_proj = nn.Linear(300, 300, bias=True)
+
+        self.selective_gate = nn.Linear(self.hidden_size * 2 * 2, self.hidden_size * 2)
         self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(opt.dropout)
 
@@ -61,6 +62,8 @@ class Encoder(nn.Module):
         self._entity_enc = ConvEntityEncoder(
             opt.word_vec_size, conv_hidden, opt.dropout, embedding=self.word_lut,
         )
+        self.context_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
+
 
     def load_lm_rnn(self, opt):
         if opt.lm_model_file is not None:
@@ -124,25 +127,24 @@ class Encoder(nn.Module):
 
         time_step = outputs.size(0)  # L
         batch_size = outputs.size(1)  # B
-        # --
-        print(svo_list)
-        cluster_nums = [c.size(0) for c in svo_list]
-        print(cluster_nums)
-        entity_out = self._encode_entity(svo_list)
-        print(entity_out.size())
-        input()
-        # --
-
         # outputs = self.dropout(outputs)  # dropout
+
+        # ------ svo
+        entity_out = self._encode_entity(svo_list)  # B, entity_num, 300
+        u = F.tanh(self.svo_proj(entity_out))  # B, entity_num, 300
+        entity_attention = torch.matmul(u, self.svo_para).squeeze()  # B,entity_num,300   300, 1
+        entity_attention = F.softmax(entity_attention, dim=1)  # B, entity_num
+        entity_aware_vector = torch.bmm(entity_attention.unsqueeze(dim=1), entity_out).squeeze(dim=1)  # B, 300
+        # ------ svo
+
 
         # -----
         # 下边的目的，单词+句子
         # ------ begin han attention
         outputs = outputs.permute(1, 0, 2)  # B, L, 2*H
-        u = F.tanh(self.context_proj(outputs))  # B, L, 2*H
-        # attention = context_para(u).squeeze()  # B, L
-        attention = torch.matmul(u, self.context_para).squeeze()  # B,L,2*H   2*H, 1
-        attention = F.softmax(attention, dim=0)  # B, L
+        u = F.tanh(self.context_proj(outputs))  # B, L, 300
+        attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze()  # B,L
+        attention = F.softmax(attention, dim=1)  # B, L  # TODO
         sentence_vector = torch.bmm(attention.unsqueeze(dim=1), outputs).squeeze(dim=1)  # B, 2*H
 
         outputs = outputs.permute(1, 0, 2)  # L, B, 2*H
@@ -162,8 +164,7 @@ class Encoder(nn.Module):
         # sentence_vector = torch.cat((forward_last, backward_last), dim=1)  # B, 2*H
         # B, 4*H
         exp_buf = torch.cat((outputs,
-                             self.context_para.squeeze().unsqueeze(0).expand_as(outputs),
-                             sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 6*H
+                             sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H
         selective_value = self.sigmoid(self.selective_gate(exp_buf.view(-1, exp_buf.size(2))))  # Eq.8
         selective_value = selective_value.view(time_step, batch_size, -1)  # L, B, 2*H
         outputs = outputs * selective_value  # L, B, 2*H

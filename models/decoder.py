@@ -30,12 +30,12 @@ class Decoder(nn.Module):
         else:
             self.rnn = models.modules.StackedLSTM(opt.layers, input_size, opt.dec_rnn_size, opt.dropout)
 
-        # self.attn = s2s.modules.ConcatAttention(opt.enc_rnn_size, opt.dec_rnn_size, opt.att_vec_size)
-        self.attn = models.modules.ConcatAttention(opt.enc_rnn_size, opt.dec_rnn_size + opt.enc_rnn_size, opt.att_vec_size)
+        self.attn = models.modules.ConcatAttention(opt.enc_rnn_size, opt.dec_rnn_size, opt.att_vec_size)
+        # self.attn = models.modules.ConcatAttention(opt.enc_rnn_size, opt.dec_rnn_size + opt.enc_rnn_size, opt.att_vec_size)
         self.dropout = nn.Dropout(opt.dropout)
 
-        # self.readout = nn.Linear((opt.enc_rnn_size + opt.dec_rnn_size + opt.word_vec_size), opt.dec_rnn_size)
-        self.readout = nn.Linear((opt.enc_rnn_size + opt.dec_rnn_size + opt.word_vec_size + opt.enc_rnn_size), opt.dec_rnn_size)
+        self.readout = nn.Linear((opt.enc_rnn_size + opt.dec_rnn_size + opt.word_vec_size), opt.dec_rnn_size)
+        # self.readout = nn.Linear((opt.enc_rnn_size + opt.dec_rnn_size + opt.word_vec_size + opt.enc_rnn_size), opt.dec_rnn_size)
 
         self.maxout = models.modules.MaxOut(opt.maxout_pool_size)
         self.maxout_pool_size = opt.maxout_pool_size
@@ -45,7 +45,7 @@ class Decoder(nn.Module):
         self.is_coverage = opt.is_coverage
         if self.pointer_gen:
             self.p_gen_linear = nn.Linear(self.hidden_size * 2 + opt.word_vec_size, 1)
-        self.encoder_global_context = None
+        # self.encoder_global_context = None
 
     def load_lm_rnn(self, opt):
         if opt.lm_model_file is not None:
@@ -98,9 +98,7 @@ class Decoder(nn.Module):
             # output是最后，hidden是num_layers cat 在一起的，用于传入下一个阶段
             # output: (B, 2*H)
             # hidden: (1, B, 2*H)
-            cur_context, attn, precompute, next_coverage = self.attn(torch.cat((output,
-                                                                                self.encoder_global_context.squeeze().unsqueeze(0).expand_as(output),
-                                                                     ), dim=1),
+            cur_context, attn, precompute, next_coverage = self.attn(output,
                                                                      context.transpose(0, 1), precompute, coverage)
             # cur_context: (B, 2*H), 加权求和后的上下文
             # attn: (B, L)  sourceL,  score
@@ -115,12 +113,7 @@ class Decoder(nn.Module):
                 g_p_gens += [p_gen]
                 g_attn += [attn]
             # ---------------------------------------------
-            if self.encoder_global_context is None:
-                readout = self.readout(torch.cat((emb_t, output, cur_context), dim=1))  # B, 2*H
-            else:
-                readout = self.readout(torch.cat((emb_t, output, cur_context,
-                                                  self.encoder_global_context.squeeze().unsqueeze(0).expand_as(cur_context)
-                                                  ), dim=1))  # B, 2*H 或许可以在搞搞，比如拿来做attention
+            readout = self.readout(torch.cat((emb_t, output, cur_context), dim=1))  # B, 2*H
             maxout = self.maxout(readout)  # B, H
             output = self.dropout(maxout)  # B, H
             g_outputs += [output]

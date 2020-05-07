@@ -7,9 +7,9 @@ class NMTModel(nn.Module):
         super(NMTModel, self).__init__()
         self.encoder = encoder
         self.decoder = decoder
-        self.decoder.encoder_global_context = self.encoder.context_para  # 2*H, 1
-        print(id(self.decoder.encoder_global_context))
-        print(id(self.encoder.context_para))
+        # self.decoder.encoder_global_context = self.encoder.context_para  # 2*H, 1
+        # print(id(self.decoder.encoder_global_context))
+        # print(id(self.encoder.context_para))
 
         # print("shore encoder decoder gru")
         # self.decoder.rnn.layers[0].weight_ih = self.encoder.rnn.weight_ih_l0
