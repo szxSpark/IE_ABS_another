@@ -53,7 +53,7 @@ def CollectVocab(files, toLower):
 if __name__ == "__main__":
     files = [r"train.article.txt"]
     vocab_file = r"source.vocab"
-    Collect(files, vocab_file, False, ["<blank>", "<unk>", "<s>", "</s>"], min_count=5)  # 最少是5
+    Collect(files, vocab_file, False, ["<blank>", "<unk>", "<s>", "</s>", "<e1_r>", "<r_e2>"], min_count=5)  # 最少是5
 
     files = [r"train.title.txt"]
     vocab_file = r"target.vocab"
