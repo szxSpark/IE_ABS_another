@@ -48,7 +48,8 @@ class NMTModel(nn.Module):
         tgt = input[1][0][:-1]  # exclude last target from inputs
         src_pad_mask = src[0].data.eq(Constants.PAD).transpose(0, 1).float()  # B, L
         svo_list = src[1]
-        print(svo_list)
+        for svo in svo_list:
+            print(svo.size())
         input()
         enc_hidden, context = self.encoder(src, svo_list)  # (2, B, H) (L, B, 2*H)
         # enc_hidden是rnn的最后一个时间戳

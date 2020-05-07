@@ -82,6 +82,8 @@ class Dataset(object):
             data = src_data
             id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
                        svo_data]  # 每个元素，len(svo), word_num, 1个文章
+            for svo in id_svos:
+                print(svo.size())
 
         lengths = [len(x) for x in data]
         max_length = max(lengths)
@@ -163,7 +165,7 @@ class Dataset(object):
             else:
                 batch = zip(indices, srcBatch, id_svos, tgtBatch,)
 
-        # batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
+        batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
         if tgtBatch is None:
             if self.pointer_gen:
                 if extra_zeros is not None:
