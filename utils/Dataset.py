@@ -74,7 +74,7 @@ class Dataset(object):
         #            source_lists]  # 每个元素，sent_num, word_num, 1个文章
         # id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
         #            id_svos_list]  # 每个元素，len(svo), word_num, 1个文章
-        print(data)
+        print(len((data)))
         if is_src:
             src_data, svo_data = zip(*data)
             print(src_data)
