@@ -469,8 +469,8 @@ def main():
     model, optim = bulid_model(vocab_dicts)
     translator = Translator(opt, model, vocab_dicts)
     validData = None
-    # if opt.dev_input_src and opt.dev_ref:
-    #     validData = load_dev_data(translator, opt.dev_input_src, opt.dev_ref,) # 已经分好batch Dataset， list((src_batch, tgt_batch)))
+    if opt.dev_input_src and opt.dev_ref:
+        validData = load_dev_data(translator, opt.dev_input_src, opt.dev_ref, opt.dev_svo) # 已经分好batch Dataset， list((src_batch, tgt_batch)))
     trainModel(model, translator, trainData, validData, vocab_dicts, optim)
 
 if __name__ == "__main__":
