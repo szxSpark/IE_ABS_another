@@ -133,6 +133,7 @@ class Encoder(nn.Module):
         entity_out = self._encode_entity(svo_list)  # B, entity_num, 300
         u = F.tanh(self.svo_proj(entity_out))  # B, entity_num, 300
         entity_attention = torch.matmul(u, self.svo_para).squeeze()  # B,entity_num,300   300, 1
+        print(entity_attention.size())
         entity_attention = F.softmax(entity_attention, dim=1)  # B, entity_num
         entity_aware_vector = torch.bmm(entity_attention.unsqueeze(dim=1), entity_out).squeeze(dim=1)  # B, 300
         # ------ svo
