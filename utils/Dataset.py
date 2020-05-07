@@ -163,7 +163,7 @@ class Dataset(object):
             else:
                 batch = zip(indices, srcBatch, id_svos, tgtBatch,)
 
-        batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
+        # batch, lengths = zip(*sorted(zip(batch, lengths), key=lambda x: -x[1]))
         if tgtBatch is None:
             if self.pointer_gen:
                 if extra_zeros is not None:
