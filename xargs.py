@@ -19,6 +19,7 @@ def add_data_options(parser):
     parser.add_argument('-online_process_data', action="store_true")
     parser.add_argument('-process_shuffle', action="store_true")
     parser.add_argument('-train_src')
+    parser.add_argument('-train_svo')
     parser.add_argument('-src_vocab')
     parser.add_argument('-train_tgt')
     parser.add_argument('-tgt_vocab')
@@ -34,6 +35,8 @@ def add_data_options(parser):
 
 
     # Test options
+    parser.add_argument('-dev_svo',
+                        help='Path to the dev input file.')
     parser.add_argument('-dev_input_src',
                         help='Path to the dev input file.')
     parser.add_argument('-dev_ref',
