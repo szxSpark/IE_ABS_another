@@ -45,7 +45,9 @@ class Dataset(object):
         self.src = (srcData, svoData)
         if tgtData:
             self.tgt = tgtData
-            assert (len(self.src) == len(self.tgt))
+            assert (len(self.src[0]) == len(self.tgt))
+            assert (len(self.src[1]) == len(self.tgt))
+
         else:
             self.tgt = None
         self.cuda = cuda
