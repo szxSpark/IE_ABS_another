@@ -358,6 +358,7 @@ def trainModel(model, translator, trainData, validData, vocab_dicts, optim):
             #       batch[1][0].size()  decL, B        target
             #       batch[1][1].size()  decL, B        target_extend_vocab
             model.zero_grad()
+            print("2222")
             g_outputs, g_p_gens, g_attn, coverage_losses = model(batch)  # (decL-1, B, H)  舍弃掉最后一个得到预测输出
             # g_outputs (decL-1, B, H)
             # g_p_gens (decL-1, B, 1)
