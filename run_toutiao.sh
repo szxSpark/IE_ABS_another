@@ -11,7 +11,7 @@ python train.py \
        -log_home $SAVEPATH \
        -online_process_data \
        -train_src ${DATAHOME}/train/subword/train.article.txt -src_vocab ${DATAHOME}/train/subword/source.vocab \
-       -train_svo ${DATAHOME}/train/subwordsvo.subword.txt \
+       -train_svo ${DATAHOME}/train/subword/svo.subword.txt \
        -train_tgt ${DATAHOME}/train/subword/train.title.txt -tgt_vocab ${DATAHOME}/train/subword/target.vocab \
        -dev_input_src ${DATAHOME}/dev/subword/valid.article.txt -dev_ref /home/aistudio/work/toutiao_char/dev/valid.title.txt \
        -layers 1 -enc_rnn_size 512 -brnn -word_vec_size 512 -dropout 0.5 \
