@@ -125,6 +125,7 @@ class Encoder(nn.Module):
         time_step = outputs.size(0)  # L
         batch_size = outputs.size(1)  # B
         # --
+        print(svo_list)
         cluster_nums = [c.size(0) for c in svo_list]
         print(cluster_nums)
         entity_out = self._encode_entity(svo_list)
