@@ -8,6 +8,8 @@ import math
 import time
 import logging
 import os
+import numpy as np
+import random
 from PyRouge.Rouge import Rouge
 import xargs
 from tqdm import tqdm
@@ -38,12 +40,20 @@ logger.info(opt)
 if torch.cuda.is_available() and not opt.gpus:
     logger.info("WARNING: You have a CUDA device, so you should probably run with -gpus 0")
 
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+
 if opt.seed > 0:
-    torch.manual_seed(opt.seed)
+    setup_seed(opt.seed)
 
 if opt.gpus:
-    if opt.cuda_seed > 0:
-        torch.cuda.manual_seed(opt.cuda_seed)
     cuda.set_device(opt.gpus[0])
 
 logger.info('My seed is {0}'.format(torch.initial_seed()))
