@@ -42,11 +42,14 @@ class Dataset(object):
         else:
             tgtData = None
 
-        self.src = (srcData, svoData)
+        self.src = srcData
+        self.svo = svoData
+        assert len(self.src) == len(self.svo)
+
         if tgtData:
             self.tgt = tgtData
-            assert (len(self.src[0]) == len(self.tgt))
-            assert (len(self.src[1]) == len(self.tgt))
+            assert len(self.src) == len(self.tgt)
+            assert len(self.svo) == len(self.tgt)
 
         else:
             self.tgt = None
@@ -74,13 +77,13 @@ class Dataset(object):
         #            source_lists]  # 每个元素，sent_num, word_num, 1个文章
         # id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
         #            id_svos_list]  # 每个元素，len(svo), word_num, 1个文章
-        print(len((data)))
         if is_src:
-            src_data, svo_data = zip(*data)
+            src_data, svo_data = data
+            data = src_data
             print(src_data)
             print(svo_data)
             input()
-            data = src_data
+
         lengths = [x.size(0) for x in data]
         max_length = max(lengths)
         enc_batch_extend_vocab = None
@@ -130,7 +133,7 @@ class Dataset(object):
         start_idx = index * self.batchSize
         end_idx = (index + 1) * self.batchSize
         srcBatch, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths = self._batchify(
-            self.src[start_idx:end_idx],
+            [self.src[start_idx:end_idx], self.svo[start_idx:end_idx]],
             start_idx=index * self.batchSize,
             end_idx=(index + 1) * self.batchSize,
             align_right=False, include_lengths=True, is_src=True)
