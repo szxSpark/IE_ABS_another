@@ -68,7 +68,7 @@ class Dataset(object):
 
     def _batchify(self, data, start_idx, end_idx, align_right=False, include_lengths=False, is_src=True):
 
-        source = pad_batch_tensorize(sources, pad=Constants.PAD, cuda=self.cuda)
+        # source = pad_batch_tensorize(sources, pad=Constants.PAD, cuda=self.cuda)
         # tar_in = pad_batch_tensorize(tar_ins, pad=Constants.PAD, cuda=self.cuda)
         # target = pad_batch_tensorize(targets, pad=Constants.PAD, cuda=self.cuda)  # ext
         # ext_src = pad_batch_tensorize(ext_srcs, pad=Constants.PAD, cuda=self.cuda)  # ext
@@ -82,6 +82,10 @@ class Dataset(object):
             data = src_data
             source = pad_batch_tensorize(data, pad=Constants.PAD, cuda=self.cuda)
             print(source.size())
+            id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
+                       svo_data]  # 每个元素，len(svo), word_num, 1个文章
+            for a in id_svos:
+                print(a.size())
             input()
 
 
