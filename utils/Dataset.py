@@ -80,14 +80,8 @@ class Dataset(object):
         if is_src:
             src_data, svo_data = data
             data = src_data
-            print(svo_data)
             id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
                        svo_data]  # 每个元素，len(svo), word_num, 1个文章
-
-            for svo in id_svos:
-                print(svo.size())
-            input()
-
         lengths = [len(x) for x in data]
         max_length = max(lengths)
         enc_batch_extend_vocab = None
