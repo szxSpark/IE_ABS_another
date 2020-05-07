@@ -82,11 +82,11 @@ class Dataset(object):
             data = src_data
             source = pad_batch_tensorize(data, pad=Constants.PAD, cuda=self.cuda)
             print(source.size())
-            id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
-                       svo_data]  # 每个元素，len(svo), word_num, 1个文章
-            for a in id_svos:
-                print(a.size())  #11
-            input()
+            # id_svos = [pad_batch_tensorize(inputs=_, pad=Constants.PAD, cuda=self.cuda, max_num=4) for _ in
+            #            svo_data]  # 每个元素，len(svo), word_num, 1个文章
+            # for a in id_svos:
+            #     print(a.size())  #11
+            # input()
 
 
         lengths = [x.size(0) for x in data]
@@ -126,6 +126,11 @@ class Dataset(object):
             data_length = data[i].size(0)
             offset = max_length - data_length if align_right else 0
             out[i].narrow(0, offset, data_length).copy_(data[i])
+        print(out.size())
+        print(out)
+        print(source)
+        input()
+
         # out, enc_batch_extend_vocab 的 size相同
         if include_lengths and is_src:  # src
             return out, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths
