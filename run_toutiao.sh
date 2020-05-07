@@ -15,10 +15,10 @@ python train.py \
        -train_tgt ${DATAHOME}/train/subword/train.title.txt -tgt_vocab ${DATAHOME}/train/subword/target.vocab \
        -dev_input_src ${DATAHOME}/dev/subword/valid.article.txt -dev_ref /home/aistudio/work/toutiao_char/dev/valid.title.txt \
        -layers 1 -enc_rnn_size 512 -brnn -word_vec_size 512 -dropout 0.5 \
-       -batch_size 32 -beam_size 1 \
+       -batch_size 4 -beam_size 1 \
        -epochs 200 \
        -optim adam -learning_rate 0.001 \
-       -gpus 0 \
+       -gpus 2 \
        -curriculum 0 -extra_shuffle \
        -start_eval_batch 2000 -eval_per_batch 2000 \
        -log_interval 100 \
