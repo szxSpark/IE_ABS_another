@@ -131,12 +131,8 @@ class Encoder(nn.Module):
 
         # ------ svo
         entity_out = self._encode_entity(svo_list)  # B, entity_num, 300
-        print(111)
-        print(entity_out.size())
-
         u = F.tanh(self.svo_proj(entity_out))  # B, entity_num, 300
-        entity_attention = torch.matmul(u, self.svo_para).squeeze()  # B,entity_num,300   300, 1
-        print(entity_attention.size())
+        entity_attention = torch.matmul(u, self.svo_para).squeeze(dim=-1)  # B,entity_num,300   300, 1
         entity_attention = F.softmax(entity_attention, dim=1)  # B, entity_num
         entity_aware_vector = torch.bmm(entity_attention.unsqueeze(dim=1), entity_out).squeeze(dim=1)  # B, 300
         # ------ svo
@@ -147,7 +143,7 @@ class Encoder(nn.Module):
         # ------ begin han attention
         outputs = outputs.permute(1, 0, 2)  # B, L, 2*H
         u = F.tanh(self.context_proj(outputs))  # B, L, 300
-        attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze()  # B,L
+        attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
         attention = F.softmax(attention, dim=1)  # B, L  # TODO
         sentence_vector = torch.bmm(attention.unsqueeze(dim=1), outputs).squeeze(dim=1)  # B, 2*H
 

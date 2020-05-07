@@ -125,7 +125,6 @@ class Dataset(object):
 
     def __getitem__(self, index):
         assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
-        print(000000)
         start_idx = index * self.batchSize
         end_idx = (index + 1) * self.batchSize
         srcBatch, id_svos, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths = self._batchify(
@@ -133,8 +132,6 @@ class Dataset(object):
             start_idx=index * self.batchSize,
             end_idx=(index + 1) * self.batchSize,
             align_right=False, include_lengths=True, is_src=True)
-        print(10000)
-
         if self.tgt:
             tgtBatch, dec_batch_extend_vocab = self._batchify(
                 self.tgt[start_idx:end_idx],
