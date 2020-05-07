@@ -84,6 +84,7 @@ class Dataset(object):
                        svo_data]  # 每个元素，len(svo), word_num, 1个文章
             for svo in id_svos:
                 print(svo.size())
+            input()
 
         lengths = [len(x) for x in data]
         max_length = max(lengths)
