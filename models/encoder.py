@@ -126,7 +126,7 @@ class Encoder(nn.Module):
         batch_size = outputs.size(1)  # B
         # --
         cluster_nums = [c.size(0) for c in svo_list]
-        print(callable())
+        print(cluster_nums)
         entity_out = self._encode_entity(svo_list)
         print(entity_out.size())
         input()
