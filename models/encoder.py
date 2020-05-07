@@ -86,7 +86,7 @@ class Encoder(nn.Module):
         enc_entities = [self._entity_enc(cluster_words) for cluster_words in clusters]
         max_n = max(cluster_nums)
         def zero(n, device):
-            z = torch.zeros(n, self._art_enc.input_size).to(device)
+            z = torch.zeros(n, 300).to(device)
             return z
         enc_entity = torch.stack(
             [torch.cat([s, zero(max_n - n, s.device)], dim=0)
