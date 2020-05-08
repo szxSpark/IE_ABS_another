@@ -63,9 +63,9 @@ class Encoder(nn.Module):
         self._entity_enc = ConvEntityEncoder(
             opt.word_vec_size, conv_hidden, opt.dropout, embedding=self.word_lut,
         )
-        self.context_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
+        self.context_proj = nn.Linear(self.hidden_size * 2, 300+self.hidden_size * 2, bias=True)
         self.szx_proj = nn.Linear(300,self.hidden_size * 2, bias=True)
-
+        self.context_para = nn.Parameter(torch.FloatTensor(self.hidden_size * 2, 1))
 
 
     def load_lm_rnn(self, opt):
@@ -147,14 +147,17 @@ class Encoder(nn.Module):
         # 下边的目的，单词+句子
         # ------ begin han attention
         outputs = outputs.permute(1, 0, 2)  # B, L, 2*H
-        u = F.tanh(self.context_proj(outputs))  # B, L, 300
-        attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
+        u = F.tanh(self.context_proj(outputs))  # B, L, 300_2*H
+        query = torch.cat((self.context_para, entity_aware_vector), dim=-1)  # B, 300+2*H
+        # attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
+        attention = torch.bmm(u, query.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
+
         attention = F.softmax(attention, dim=1)  # B, L  # TODO
         sentence_vector = torch.bmm(attention.unsqueeze(dim=1), outputs).squeeze(dim=1)  # B, 2*H
 
 
-        entity_aware_vector = self.szx_proj(entity_aware_vector)  # B, 2*H
-        outputs = outputs+entity_aware_vector.unsqueeze(1)  # B, L, 2*H
+        # entity_aware_vector = self.szx_proj(entity_aware_vector)  # B, 2*H
+        # outputs = outputs+entity_aware_vector.unsqueeze(1)  # B, L, 2*H
 
         outputs = outputs.permute(1, 0, 2)  # L, B, 2*H,
         # outputs = self.dropout(outputs)  # dropout
