@@ -55,8 +55,8 @@ class Encoder(nn.Module):
         self.svo_proj = nn.Linear(300, 300, bias=True)
         self.svo_query_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
 
-        self.selective_gate = nn.Linear(self.hidden_size * 2 * 2, self.hidden_size * 2)
-        self.sigmoid = nn.Sigmoid()
+        # self.selective_gate = nn.Linear(self.hidden_size * 2 * 2, self.hidden_size * 2)
+        # self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(opt.dropout)
 
         conv_hidden = 100
@@ -64,6 +64,8 @@ class Encoder(nn.Module):
             opt.word_vec_size, conv_hidden, opt.dropout, embedding=self.word_lut,
         )
         self.context_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
+        self.szx_proj = nn.Linear(300,self.hidden_size * 2, bias=True)
+
 
 
     def load_lm_rnn(self, opt):
@@ -141,7 +143,6 @@ class Encoder(nn.Module):
         entity_aware_vector = torch.bmm(entity_attention.unsqueeze(dim=1), entity_out).squeeze(dim=1)  # B, 300
         # ------ svo
 
-
         # -----
         # 下边的目的，单词+句子
         # ------ begin han attention
@@ -151,28 +152,29 @@ class Encoder(nn.Module):
         attention = F.softmax(attention, dim=1)  # B, L  # TODO
         sentence_vector = torch.bmm(attention.unsqueeze(dim=1), outputs).squeeze(dim=1)  # B, 2*H
 
+
+        entity_aware_vector = self.szx_proj(entity_aware_vector)  # B, 2*H
+        outputs = outputs+entity_aware_vector.unsqueeze(1)  # B, L, 2*H
+
         outputs = outputs.permute(1, 0, 2)  # L, B, 2*H
         # outputs = self.dropout(outputs)  # dropout
 
         # ------ end han attention
 
-        # ------ begin self atttntion
-        # outputs = self.self_attn(outputs, outputs, outputs, key_padding_mask=src_pad_mask)[0]  # L, B, 2*H
-        # # mead pool or max pool
-        # sentence_vector = torch.mean(outputs, dim=0)  # B, 2*H
-        # ------ end self atttntion
+
+
 
         hidden_t = (None, sentence_vector)
 
-        # ------ begin original
-        # sentence_vector = torch.cat((forward_last, backward_last), dim=1)  # B, 2*H
-        # B, 4*H
-        exp_buf = torch.cat((outputs,
-                             sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H
-        selective_value = self.sigmoid(self.selective_gate(exp_buf.view(-1, exp_buf.size(2))))  # Eq.8
-        selective_value = selective_value.view(time_step, batch_size, -1)  # L, B, 2*H
-        outputs = outputs * selective_value  # L, B, 2*H
-        # ------ end original
+        # # ------ begin original
+        # # sentence_vector = torch.cat((forward_last, backward_last), dim=1)  # B, 2*H
+        # # B, 4*H
+        # exp_buf = torch.cat((outputs,
+        #                      sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H
+        # selective_value = self.sigmoid(self.selective_gate(exp_buf.view(-1, exp_buf.size(2))))  # Eq.8
+        # selective_value = selective_value.view(time_step, batch_size, -1)  # L, B, 2*H
+        # outputs = outputs * selective_value  # L, B, 2*H
+        # # ------ end original
 
         # ------ begin another gate
         # selective_value_context = self.sigmoid(self.selective_gate_context(exp_buf.view(-1, exp_buf.size(2))))
