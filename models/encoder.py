@@ -51,8 +51,9 @@ class Encoder(nn.Module):
                                num_layers=opt.layers,
                                dropout=opt.dropout,
                                bidirectional=True)
-        self.svo_para = nn.Parameter(torch.FloatTensor(300, 1))
+        # self.svo_para = nn.Parameter(torch.FloatTensor(300, 1))
         self.svo_proj = nn.Linear(300, 300, bias=True)
+        self.svo_query_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
 
         self.selective_gate = nn.Linear(self.hidden_size * 2 * 2, self.hidden_size * 2)
         self.sigmoid = nn.Sigmoid()
@@ -130,9 +131,12 @@ class Encoder(nn.Module):
         # outputs = self.dropout(outputs)  # dropout
 
         # ------ svo
+        svo_query = outputs.permute(1, 0, 2).max(dim=1)[0]  # B, 2*H
+        svo_query = self.svo_query_proj(svo_query).unsqueeze(dim=2)  # B, 300, 1
         entity_out = self._encode_entity(svo_list)  # B, entity_num, 300
         u = F.tanh(self.svo_proj(entity_out))  # B, entity_num, 300
-        entity_attention = torch.matmul(u, self.svo_para).squeeze(dim=-1)  # B,entity_num,300   300, 1
+        entity_attention = torch.bmm(u, svo_query).squeeze(dim=-1)  # B, entity_num
+        # entity_attention = torch.matmul(u, self.svo_para).squeeze(dim=-1)  # B,entity_num,300   300, 1
         entity_attention = F.softmax(entity_attention, dim=1)  # B, entity_num
         entity_aware_vector = torch.bmm(entity_attention.unsqueeze(dim=1), entity_out).squeeze(dim=1)  # B, 300
         # ------ svo
