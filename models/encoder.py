@@ -148,7 +148,8 @@ class Encoder(nn.Module):
         # ------ begin han attention
         outputs = outputs.permute(1, 0, 2)  # B, L, 2*H
         u = F.tanh(self.context_proj(outputs))  # B, L, 300_2*H
-        query = torch.cat((self.context_para, entity_aware_vector), dim=-1)  # B, 300+2*H
+        query = torch.cat((self.context_para.squeeze().unsqueeze(0).expand(outputs.size(0), self.hidden_size * 2), entity_aware_vector), dim=-1)  # B, 300+2*H
+
         # attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
         attention = torch.bmm(u, query.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
 
