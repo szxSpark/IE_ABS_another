@@ -156,7 +156,7 @@ class Encoder(nn.Module):
         entity_aware_vector = self.szx_proj(entity_aware_vector)  # B, 2*H
         outputs = outputs+entity_aware_vector.unsqueeze(1)  # B, L, 2*H
 
-        outputs = outputs.permute(1, 0, 2)  # L, B, 2*H
+        outputs = outputs.permute(1, 0, 2)  # L, B, 2*H,
         # outputs = self.dropout(outputs)  # dropout
 
         # ------ end han attention
