@@ -51,12 +51,12 @@ class Encoder(nn.Module):
                                num_layers=opt.layers,
                                dropout=opt.dropout,
                                bidirectional=True)
-        # self.svo_para = nn.Parameter(torch.FloatTensor(300, 1))
-        self.svo_proj = nn.Linear(300, 300, bias=True)
-        self.svo_query_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
+        # self.spo_para = nn.Parameter(torch.FloatTensor(300, 1))
+        self.spo_proj = nn.Linear(300, 300, bias=True)
+        self.spo_query_proj = nn.Linear(self.hidden_size * 2, 300, bias=True)
 
-        # self.selective_gate = nn.Linear(self.hidden_size * 2 * 2, self.hidden_size * 2)
-        # self.sigmoid = nn.Sigmoid()
+        self.selective_gate = nn.Linear(self.hidden_size * 2 * 2+300, self.hidden_size * 2+300)
+        self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(opt.dropout)
 
         conv_hidden = 100
@@ -64,7 +64,7 @@ class Encoder(nn.Module):
             opt.word_vec_size, conv_hidden, opt.dropout, embedding=self.word_lut,
         )
         self.context_proj = nn.Linear(self.hidden_size * 2, 300+self.hidden_size * 2, bias=True)
-        self.szx_proj = nn.Linear(300,self.hidden_size * 2, bias=True)
+        # self.szx_proj = nn.Linear(300,self.hidden_size * 2, bias=True)
         self.context_para = nn.Parameter(torch.FloatTensor(self.hidden_size * 2, 1))
 
 
@@ -108,40 +108,34 @@ class Encoder(nn.Module):
         # type(input): tuple    len: 7
         #   input[0].size()  L, B        source
         #   input[1].size()  1, B        length, 降序
-        svo_list = input[1]
+        spo_list = input[1]
         lengths = input[2].data.view(-1).tolist()
         wordEmb = self.word_lut(input[0])  # L, B, H
 
         emb = pack(wordEmb, lengths)
         if self.rnn_type == "gru":
             outputs, hidden_t = self.rnn(emb)
-            forward_last = hidden_t[0]  # B, H
-            backward_last = hidden_t[1]  # B, H
             if isinstance(input, tuple):
                 outputs = unpack(outputs)[0]
             # h_n (num_layers * num_directions, batch, hidden_size)
         else:
             outputs, (hidden_t, _) = self.rnn(emb)
-            forward_last = hidden_t[0]  # B, H
-            backward_last = hidden_t[1]  # B, H
             # h_n (num_layers * num_directions, batch, hidden_size)
             if isinstance(input, tuple):
                 outputs = unpack(outputs)[0]
 
         time_step = outputs.size(0)  # L
         batch_size = outputs.size(1)  # B
-        # outputs = self.dropout(outputs)  # dropout
-
-        # ------ svo
-        svo_query = outputs.permute(1, 0, 2).max(dim=1)[0]  # B, 2*H
-        svo_query = self.svo_query_proj(svo_query).unsqueeze(dim=2)  # B, 300, 1
-        entity_out = self._encode_entity(svo_list)  # B, entity_num, 300
-        u = F.tanh(self.svo_proj(entity_out))  # B, entity_num, 300
-        entity_attention = torch.bmm(u, svo_query).squeeze(dim=-1)  # B, entity_num
-        # entity_attention = torch.matmul(u, self.svo_para).squeeze(dim=-1)  # B,entity_num,300   300, 1
+        # ------ spo
+        spo_query = outputs.permute(1, 0, 2).max(dim=1)[0]  # B, 2*H
+        spo_query = self.spo_query_proj(spo_query).unsqueeze(dim=2)  # B, 300, 1
+        entity_out = self._encode_entity(spo_list)  # B, entity_num, 300
+        u = F.tanh(self.spo_proj(entity_out))  # B, entity_num, 300
+        entity_attention = torch.bmm(u, spo_query).squeeze(dim=-1)  # B, entity_num
+        # entity_attention = torch.matmul(u, self.spo_para).squeeze(dim=-1)  # B,entity_num,300   300, 1
         entity_attention = F.softmax(entity_attention, dim=1)  # B, entity_num
         entity_aware_vector = torch.bmm(entity_attention.unsqueeze(dim=1), entity_out).squeeze(dim=1)  # B, 300
-        # ------ svo
+        # ------ spo
 
         # -----
         # 下边的目的，单词+句子
@@ -149,42 +143,33 @@ class Encoder(nn.Module):
         outputs = outputs.permute(1, 0, 2)  # B, L, 2*H
         u = F.tanh(self.context_proj(outputs))  # B, L, 300_2*H
         query = torch.cat((self.context_para.squeeze().unsqueeze(0).expand(outputs.size(0), self.hidden_size * 2), entity_aware_vector), dim=-1)  # B, 300+2*H
-
-        # attention = torch.bmm(u, entity_aware_vector.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
         attention = torch.bmm(u, query.unsqueeze(dim=2)).squeeze(dim=-1)  # B,L
-
-        attention = F.softmax(attention, dim=1)  # B, L  # TODO
+        attention = F.softmax(attention, dim=1)  # B, L
         sentence_vector = torch.bmm(attention.unsqueeze(dim=1), outputs).squeeze(dim=1)  # B, 2*H
-
-
+        # ------
         # entity_aware_vector = self.szx_proj(entity_aware_vector)  # B, 2*H
-        # outputs = outputs+entity_aware_vector.unsqueeze(1)  # B, L, 2*H
+        entity_aware_vector = self.dropout(entity_aware_vector)
+        outputs = torch.cat(
+            (outputs,
+             entity_aware_vector.unsqueeze(1).expand(batch_size, time_step, 300),
+             ),
+            dim=2
+        )  # B, L, 2*H+300    # TODO fusiion利用szx_proj
+        # ------
 
         outputs = outputs.permute(1, 0, 2)  # L, B, 2*H,
         # outputs = self.dropout(outputs)  # dropout
 
         # ------ end han attention
 
-
-
-
         hidden_t = (None, sentence_vector)
 
-        # # ------ begin original
-        # # sentence_vector = torch.cat((forward_last, backward_last), dim=1)  # B, 2*H
-        # # B, 4*H
-        # exp_buf = torch.cat((outputs,
-        #                      sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H
-        # selective_value = self.sigmoid(self.selective_gate(exp_buf.view(-1, exp_buf.size(2))))  # Eq.8
-        # selective_value = selective_value.view(time_step, batch_size, -1)  # L, B, 2*H
-        # outputs = outputs * selective_value  # L, B, 2*H
-        # # ------ end original
+        exp_buf = torch.cat((outputs,
+                             sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H，
+        selective_value = self.sigmoid(self.selective_gate(exp_buf.view(-1, exp_buf.size(2))))  # Eq.8
+        selective_value = selective_value.view(time_step, batch_size, -1)  # L, B, 2*H
+        outputs = outputs * selective_value  # L, B, 2*H
 
-        # ------ begin another gate
-        # selective_value_context = self.sigmoid(self.selective_gate_context(exp_buf.view(-1, exp_buf.size(2))))
-        # selective_value_context = selective_value_context.view(time_step, batch_size, -1)  # L, B, 2*H
-        # outputs = outputs * selective_value + sentence_vector * selective_value_context  # L, B, 2*H
-        # ------ end another gate
 
         return hidden_t, outputs
         # (2, B, H) (L, B, 2*H)
