@@ -163,6 +163,8 @@ class Encoder(nn.Module):
         # ------ end han attention
 
         hidden_t = (None, sentence_vector)
+        print(outputs.size())
+        print(sentence_vector.size())
 
         exp_buf = torch.cat((outputs,
                              sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H，
