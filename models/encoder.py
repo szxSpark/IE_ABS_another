@@ -163,11 +163,8 @@ class Encoder(nn.Module):
         # ------ end han attention
 
         hidden_t = (None, sentence_vector)
-        print(outputs.size())
-        print(sentence_vector.size())
-
         exp_buf = torch.cat((outputs,
-                             sentence_vector.unsqueeze(0).expand_as(outputs)), dim=2)  # L, B, 4*H，
+                             sentence_vector.unsqueeze(0).expand(time_step, time_step, sentence_vector.size(-1))), dim=2)  # L, B, 4*H，
         selective_value = self.sigmoid(self.selective_gate(exp_buf.view(-1, exp_buf.size(2))))  # Eq.8
         selective_value = selective_value.view(time_step, batch_size, -1)  # L, B, 2*H
         outputs = outputs * selective_value  # L, B, 2*H
