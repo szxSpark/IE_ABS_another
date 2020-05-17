@@ -22,7 +22,7 @@ class Decoder(nn.Module):
                                          input_size,
                                          padding_idx=Constants.PAD)
         if self.input_feed:
-            input_size += opt.enc_rnn_size + 300
+            input_size += opt.enc_rnn_size
 
         self.rnn_type = "gru"
         if self.rnn_type == "gru":
