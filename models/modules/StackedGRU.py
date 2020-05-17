@@ -14,6 +14,10 @@ class StackedGRU(nn.Module):
 
     def forward(self, input, hidden):
         h_0 = hidden
+        print(input.size())
+        print(h_0[0].size())
+        print(len(h_0))
+
         h_1 = []
         for i, layer in enumerate(self.layers):
             h_1_i = layer(input, h_0[i])  # (B, 2*H)
