@@ -30,11 +30,11 @@ class Decoder(nn.Module):
         else:
             self.rnn = models.modules.StackedLSTM(opt.layers, input_size, opt.dec_rnn_size, opt.dropout)
 
-        self.attn = models.modules.ConcatAttention(opt.enc_rnn_size+300, opt.dec_rnn_size, opt.att_vec_size)
+        self.attn = models.modules.ConcatAttention(opt.enc_rnn_size, opt.dec_rnn_size, opt.att_vec_size)
         # self.attn = models.modules.ConcatAttention(opt.enc_rnn_size, opt.dec_rnn_size + opt.enc_rnn_size, opt.att_vec_size)
         self.dropout = nn.Dropout(opt.dropout)
 
-        self.readout = nn.Linear((opt.enc_rnn_size +300 + opt.dec_rnn_size + opt.word_vec_size), opt.dec_rnn_size)
+        self.readout = nn.Linear((opt.enc_rnn_size + opt.dec_rnn_size + opt.word_vec_size), opt.dec_rnn_size)
         # self.readout = nn.Linear((opt.enc_rnn_size + opt.dec_rnn_size + opt.word_vec_size + opt.enc_rnn_size), opt.dec_rnn_size)
 
         self.maxout = models.modules.MaxOut(opt.maxout_pool_size)

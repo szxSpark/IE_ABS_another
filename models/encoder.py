@@ -33,8 +33,10 @@ class Encoder(nn.Module):
     def __init__(self, opt, dicts):
         self.layers = opt.layers
         self.num_directions = 2
-        assert opt.enc_rnn_size % self.num_directions == 0
-        self.hidden_size = opt.enc_rnn_size // self.num_directions
+        # assert opt.enc_rnn_size % self.num_directions == 0
+        # self.hidden_size = opt.enc_rnn_size // self.num_directions
+        self.hidden_size = 256
+
         input_size = opt.word_vec_size
         super(Encoder, self).__init__()
         self.word_lut = nn.Embedding(dicts.size(),
