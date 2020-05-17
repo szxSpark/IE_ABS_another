@@ -51,11 +51,7 @@ class NMTModel(nn.Module):
         # enc_hidden是rnn的最后一个时间戳
         # context是经过门过滤后的每个词的编码
         init_att = self.make_init_att(context)  # (B, 2*H)  # 都是0
-        print(init_att.size())
-        print(enc_hidden[1].size())
         enc_hidden = self.decIniter(enc_hidden[1]).unsqueeze(0)  # Eq. 11 (1, B，2*H)
-        print(enc_hidden.size())
-        print("----")
         # enc_hidden： 经过linear与tanh， 这么做的好处是，离靠前位置的句子近，不容易丢失信息，符合新闻文章的特点
         coverage = input[0][5]
         if coverage is not None:

@@ -94,8 +94,6 @@ class Decoder(nn.Module):
             input_emb = emb_t  # (B, word_H)
             if self.input_feed:
                 input_emb = torch.cat([emb_t, cur_context], 1)  # 利用att  (B, H+word_H)
-            print(input_emb.size())
-            print(hidden.size())
 
             output, hidden = self.rnn(input_emb, hidden)
 
