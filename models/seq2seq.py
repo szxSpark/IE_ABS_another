@@ -26,7 +26,7 @@ class NMTModel(nn.Module):
     def make_init_att(self, context):
         # L, B, 2 * H
         batch_size = context.size(1)
-        h_size = (batch_size, self.encoder.hidden_size * self.encoder.num_directions)
+        h_size = (batch_size, self.encoder.hidden_size * self.encoder.num_directions + 300)
         return context.data.new(*h_size).zero_()
 
     def forward(self, input):
