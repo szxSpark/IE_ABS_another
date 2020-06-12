@@ -1,7 +1,9 @@
 #!/bin/bash
 set -x
-SAVEPATH=/home/zxsong/workspace/seass/data//toutiao_word/models/IE_ABS
-DATAHOME=/home/zxsong/workspace/seass/data/toutiao_word
+SAVEPATH=~/workspace/data/toutiao_word/models/IE_ABS
+DATAHOME=~/workspace/data/toutiao_word
+#SAVEPATH=/home/zxsong/workspace/seass/data/toutiao_word/models/IE_ABS
+#DATAHOME=/home/zxsong/workspace/seass/data/toutiao_word
 #SAVEPATH=/home/aistudio/work/toutiao_word/models/seass
 #DATAHOME=/home/aistudio/work/toutiao_word
 # dev_ref 不要用 subword
@@ -13,12 +15,13 @@ python train.py \
        -train_src ${DATAHOME}/train/subword/train.article.txt -src_vocab ${DATAHOME}/train/subword/source.vocab \
        -train_svo ${DATAHOME}/train/subword/svo.subword.txt \
        -train_tgt ${DATAHOME}/train/subword/train.title.txt -tgt_vocab ${DATAHOME}/train/subword/target.vocab \
-       -dev_input_src ${DATAHOME}/dev/subword/valid.article.txt -dev_ref /home/aistudio/work/toutiao_char/dev/valid.title.txt \
+       -dev_input_src ${DATAHOME}/dev/subword/valid.article.txt -dev_ref ~/workspace/data/toutiao_char/dev/valid.title.txt \
+       -dev_svo ${DATAHOME}/dev/subword/svo.subword.txt \
        -layers 1 -enc_rnn_size 812 -brnn -word_vec_size 512 -dropout 0.5 \
-       -batch_size 4 -beam_size 1 \
+       -batch_size 32 -beam_size 1 \
        -epochs 200 \
        -optim adam -learning_rate 0.001 \
-       -gpus 2 \
+       -gpus 0 \
        -curriculum 0 -extra_shuffle \
        -start_eval_batch 2000 -eval_per_batch 2000 \
        -log_interval 100 \
