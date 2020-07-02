@@ -546,7 +546,7 @@ def main():
     checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
     print(checkpoint['epoch'])
     print(checkpoint['dicts'])
-    model_state_dict = checkpoint['model_state_dict']
+    model_state_dict = checkpoint['model']
 
     vocab_dicts = checkpoint['dicts']
     opt = checkpoint['opt']
