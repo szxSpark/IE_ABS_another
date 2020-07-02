@@ -552,17 +552,18 @@ def main():
         decoder.word_lut = encoder.word_lut
     decIniter = DecInit(opt)
     model = NMTModel(encoder, decoder, decIniter)
-    print(model.named_parameters()['encoder.context_para'])
     for name, param in model.named_parameters():
-        print(name)
-        # encoder.context_para
-        #
+        if name == 'encoder.context_para':
+            print(param)
         # encoder.word_lut.weight
-        #
         # encoder.rnn.weight_ih_l0
-        input()
     model.load_state_dict(checkpoint['model'])
-    print(123)
+    for name, param in model.named_parameters():
+        if name == 'encoder.context_para':
+            print(param)
+        # encoder.word_lut.weight
+        # encoder.rnn.weight_ih_l0
+
     # model_state_dict = model.state_dict()
     # model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
     # generator_state_dict = model.generator.module.state_dict() if len(
