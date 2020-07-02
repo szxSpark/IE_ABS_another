@@ -143,7 +143,7 @@ def load_dev_data(article):
     spo_list = extract_elements(article, LTP_DIR)
     print(spo_list)
 
-    # 构建subword的svo
+    # 构建subword的spo
     spo_words = []
     for e1, r, e2 in spo_list:
         e1 = [" ".join(e1)]
@@ -151,38 +151,30 @@ def load_dev_data(article):
         e2 = [" ".join(e2)]
         spo_words.append(e1 + r + e2)
     spo_words = ["\n".join(spo) for spo in spo_words]
-    subword_article = shell_subword(spo_words, in_f="./subword/inf.spo.tmp.txt", out_f="./subword/outf.spo.tmp.txt")
-
+    subword_spo = shell_subword(spo_words, in_f="./subword/inf.spo.tmp.txt", out_f="./subword/outf.spo.tmp.txt")
+    print(subword_spo)
     # 逆操作
-    svo_num = len(spo_list)
     c = 0
-    one_svo = ""
-    final_svo = []
-    for line in open("./subword/outf.spo.tmp.txt", "r", encoding="utf-8"):
+    one_spo = ""
+    final_spo = []
+    for line in subword_spo:
         c += 1
-        one_svo += line.strip()
+        one_spo += line.strip()
         if c % 3 == 0:
-            # 一个svo
-            final_svo.append(one_svo)
-            one_svo = ""
+            # 一个spo
+            final_spo.append(one_spo)
+            one_spo = ""
         elif c % 3 == 1:
             # s
-            one_svo += " " + E1_R_WORD + " "
+            one_spo += " " + E1_R_WORD + " "
         else:
             # s, v
-            one_svo += " " + R_E2_WORD + " "
+            one_spo += " " + R_E2_WORD + " "
     assert c % 3 == 0
-    print(final_svo)
-    # svos = []
-    # for _ in range(svo_num):
-    #     svos.append(final_svo[i])
-    # f.write(json.dumps(svos, ensure_ascii=False) + "\n")
-    #
-    #
-    #
+
+    # z
     src_batch = [subword_article]
-    # spoline = ["章@@ 子怡 <e1_r> 孩子 <r_e2> 汪峰", "汪峰 <e1_r> 举行 演唱会 <r_e2> 上海", "汪峰 <e1_r> 取消 <r_e2> 灿鸿", "章@@ 子怡 <e1_r> 赴 <r_e2> 上海"]
-    # spo_list = [one_spo.split(" ") for one_spo in json.loads(spoline, encoding="utf-8")]
+    spo_list = [one_spo.split(" ") for one_spo in final_spo]
     # spo_batch += [spo_list]
     # # data = translator.buildData(src_batch, tgt_batch, spo_batch)
     # # dataset.append(data)
