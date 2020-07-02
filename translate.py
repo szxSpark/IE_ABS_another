@@ -117,7 +117,6 @@ def preprocess_pipeline(article, cut_level):
 def shell_subword(data, in_f, out_f):
     # data:只是一条数据 str
     assert type(data) == list
-    print(data)
     with open(in_f, "w", encoding="utf-8")as f:
         for one_data in data:
             f.write(str(one_data.strip())+"\n")
@@ -138,9 +137,8 @@ def load_dev_data(article):
     cutted_article_str = cutted_article_str[:2000]
     # 这里要subword
     subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
-    print(subword_article) #
-    assert len(subword_article) == 1
-    subword_article = subword_article[0].strip()
+    subword_article = "".join(subword_article)
+    print(subword_article)
 
     # 采用融合要素抽取的模型，需要计算oie
     spo_list = extract_elements(article, LTP_DIR)
