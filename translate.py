@@ -136,7 +136,7 @@ def load_dev_data(article, spo):
     # 这里要subword
     subword_article = shell_subword(cutted_article, in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
     # 采用融合要素抽取的模型，需要计算oie
-    spo_list = extract_elements(article)
+    spo_list = extract_elements(article, LTP_DIR)
     print(spo_list)
 
     src_batch = [subword_article]
