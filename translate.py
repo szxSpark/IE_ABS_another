@@ -217,19 +217,16 @@ def predict_oneData(translator, data):
         )
     predict = [' '.join(sents) for sents in predBatch][0]  # str
 
-    tmp_file1 = "./subword/predict.subword.txt"
-    tmp_file2 = "./subword/predict.txt"
+    tmp_file = "./subword/predict.txt"
+    with open(tmp_file, 'w', encoding='utf-8') as of:
+        of.write(predict.strip() + '\n')
 
-    with open(tmp_file1, 'w', encoding='utf-8') as of:
-        for p in predict:
-            of.write(p + '\n')
-
-    cmd = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(tmp_file1, tmp_file2)  # 写的是分词的
-    os.system(cmd)
-
-    # os.remove(tmp_file1)
-    # os.remove(tmp_file2)
-    #
+    # cmd = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(tmp_file, ofn)  # 写的是分词的
+    cmd = "sed -r 's/(@@ )|(@@ ?$)//g' {}".format(tmp_file)  # 写的是分词的
+    fouput = os.popen(cmd)
+    result = fouput.readlines()
+    print("result is: %s" % result)
+    # os.remove(ofn + ".tmp")
     # predict = []
     # # opt.dev_ref 不要用subword
     # with open(ofn, encoding='utf-8') as f:
