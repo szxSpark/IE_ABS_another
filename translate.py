@@ -120,9 +120,7 @@ def shell_subword(data, in_f, out_f):
     print(data)
     with open(in_f, "w", encoding="utf-8")as f:
         for one_data in data:
-            print(one_data)
-
-            f.write(one_data.strip()+"\n")
+            f.write(str(one_data.strip())+"\n")
     codes_file = "./subword/codes"
     voc_file = "./subword/voc.article"
     cmd = "subword-nmt apply-bpe -c {} --vocabulary {} --vocabulary-threshold 50 < {} > {}".format(
