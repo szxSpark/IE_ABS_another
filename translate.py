@@ -198,7 +198,7 @@ def load_model(model_file):
     return model, opt, vocab_dicts
 
 def evalModel(translator, data):
-    print(data)
+    print(len(data))
     for batch in data:
         src, _, indices = batch
 
