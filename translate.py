@@ -201,7 +201,7 @@ def evalModel(translator, data):
     print(data)
     for batch in data:
         print(type(batch))
-        print(len(batch))
+        print(len(batch)) #
         src, tgt, indices = batch[0]
         # print(len(src))  # 5
     #     # print(len(tgt))  # 2
