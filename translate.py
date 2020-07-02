@@ -134,15 +134,12 @@ def load_dev_data(article):
     cut_level = "word"
     cutted_article = preprocess_pipeline(article, cut_level)
     cutted_article_str = " ".join([word for cutted_sen in cutted_article for word in cutted_sen]).strip()
-    cutted_article_str = cutted_article_str[:2000]
     # 这里要subword
     subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
-    subword_article = "".join([s.strip() for s in subword_article])
-    print(subword_article)
+    src_tokens = "".join([s.strip() for s in subword_article]).strip().split(' ')[:2000]
 
     # 采用融合要素抽取的模型，需要计算oie
     spo_list = extract_elements(article, LTP_DIR)
-    print(spo_list)
 
     # 构建subword的spo
     spo_words = []
@@ -153,7 +150,7 @@ def load_dev_data(article):
         spo_words.append(e1 + r + e2)
     spo_words = ["\n".join(spo) for spo in spo_words]
     subword_spo = shell_subword(spo_words, in_f="./subword/inf.spo.tmp.txt", out_f="./subword/outf.spo.tmp.txt")
-    print(subword_spo)
+
     # 逆操作
     c = 0
     one_spo = ""
@@ -174,9 +171,12 @@ def load_dev_data(article):
     assert c % 3 == 0
 
     # 构建数据
-    src_batch = [subword_article]
+    src_batch = [src_tokens]
     spo_list = [one_spo.split(" ") for one_spo in final_spo]
     spo_batch = [spo_list]
+
+    print(src_batch)
+    print(spo_batch)
     # data = translator.buildData(src_batch, tgt_batch, spo_batch)
     # dataset.append(data)
     # raw.append((src_batch, tgt_batch))
