@@ -116,8 +116,10 @@ def preprocess_pipeline(article, cut_level):
 
 def shell_subword(data, in_f, out_f):
     # data:只是一条数据 str
+    assert type(data) == list
     with open(in_f, "w", encoding="utf-8")as f:
-        f.write(data.strip()+"\n")
+        for one_data in data:
+            f.write(one_data.strip()+"\n")
     codes_file = "./subword/codes"
     voc_file = "./subword/voc.article"
     cmd = "subword-nmt apply-bpe -c {} --vocabulary {} --vocabulary-threshold 50 < {} > {}".format(
@@ -125,35 +127,81 @@ def shell_subword(data, in_f, out_f):
     )
     os.system(cmd)
     with open(out_f, "r", encoding="utf-8")as f:
-        return f.readlines()[0].strip()
+        return f.readlines()
 
-def load_dev_data(article, spo):
+def load_dev_data(article):
     # 先分句，再分词
     cut_level = "word"
     cutted_article = preprocess_pipeline(article, cut_level)
-    cutted_article = " ".join([word for cutted_sen in cutted_article for word in cutted_sen]).strip()
-    cutted_article = cutted_article[:2000]
+    cutted_article_str = " ".join([word for cutted_sen in cutted_article for word in cutted_sen]).strip()
+    cutted_article_str = cutted_article[:2000]
     # 这里要subword
-    subword_article = shell_subword(cutted_article, in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
+    subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
+    assert len(subword_article) == 1
+    subword_article = subword_article[0].strip()
+
     # 采用融合要素抽取的模型，需要计算oie
     spo_list = extract_elements(article, LTP_DIR)
     print(spo_list)
 
     # 构建subword的svo
-    spo_words = []  # 每个集合是一个实体列表
+    spo_words = []
     for e1, r, e2 in spo_list:
         e1 = [" ".join(e1)]
         r = [" ".join(r)]
         e2 = [" ".join(e2)]
         spo_words.append(e1 + r + e2)
     print(spo_words)
-    # out_f = "./spo.tmp.txt"
-    # c = 0
-    # with open(out_f, "w", encoding="utf-8") as f:
-    #     for _svo in spo_words:
-    #         c += 1
-    #         f.write("\n".join(_svo) + "\n")
+    subword_article = shell_subword(spo_words, in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
+    print(subword_article)
+    # # 逆操作
+    # # hier_json = "/home/zxsong/workspace/seass/data/toutiao_word/train/train.hierarchical.combine.json"
+    # hier_json = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.hierarchical.combine.json"
+    # id2svo_num = {}
+    # for data in json.load(open(hier_json, "r", encoding="utf-8")):
+    #     svo = data["svo"]
+    #     origin_id = data['origin_id']
+    #     id2svo_num[origin_id] = len(svo)
     #
+    # # data_f = "/home/zxsong/workspace/seass/data/toutiao_word/train/train.title.txt"
+    # data_f = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.title.txt"
+    # data_num = 0
+    # for i, title in enumerate(open(data_f, "r", encoding="utf-8")):
+    #     data_num += 1
+    #
+    # # in_f = "/home/zxsong/workspace/seass/data/toutiao_word/train/subword/svo.tmp.subword.txt"
+    # in_f = "/home/zxsong/workspace/seass/data/toutiao_word/dev/subword/svo.tmp.subword.txt"
+    #
+    # c = 0
+    # one_svo = ""
+    # final_svo = []
+    # for line in open(in_f, "r", encoding="utf-8"):
+    #     c += 1
+    #     one_svo += line.strip()
+    #     if c % 3 == 0:
+    #         # 一个svo
+    #         final_svo.append(one_svo)
+    #         one_svo = ""
+    #     elif c % 3 == 1:
+    #         # s
+    #         one_svo += " " + E1_R_WORD + " "
+    #     else:
+    #         # s, v
+    #         one_svo += " " + R_E2_WORD + " "
+    # assert c % 3 == 0
+    # i = 0
+    # # with open("/home/zxsong/workspace/seass/data/toutiao_word/train/subword/svo.subword.txt",
+    # with open("/home/zxsong/workspace/seass/data/toutiao_word/dev/subword/svo.subword.txt",
+    #           "w", encoding="utf-8")as f:
+    #     for data_i in range(data_num):
+    #         svo_num = id2svo_num[data_i] if data_i in id2svo_num else 0
+    #         svos = []
+    #         for _ in range(svo_num):
+    #             svos.append(final_svo[i])
+    #             i += 1
+    #         f.write(json.dumps(svos, ensure_ascii=False) + "\n")
+    # assert i == len(final_svo)
+
 
 
     src_batch = [subword_article]
@@ -523,54 +571,6 @@ def split_sentences(article):
     return new_sents
 
 
-def func2():
-    # 逆操作
-    # hier_json = "/home/zxsong/workspace/seass/data/toutiao_word/train/train.hierarchical.combine.json"
-    hier_json = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.hierarchical.combine.json"
-    id2svo_num = {}
-    for data in json.load(open(hier_json, "r", encoding="utf-8")):
-        svo = data["svo"]
-        origin_id = data['origin_id']
-        id2svo_num[origin_id] = len(svo)
-
-    # data_f = "/home/zxsong/workspace/seass/data/toutiao_word/train/train.title.txt"
-    data_f = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.title.txt"
-    data_num = 0
-    for i, title in enumerate(open(data_f, "r", encoding="utf-8")):
-        data_num += 1
-
-    # in_f = "/home/zxsong/workspace/seass/data/toutiao_word/train/subword/svo.tmp.subword.txt"
-    in_f = "/home/zxsong/workspace/seass/data/toutiao_word/dev/subword/svo.tmp.subword.txt"
-
-    c = 0
-    one_svo = ""
-    final_svo = []
-    for line in open(in_f, "r", encoding="utf-8"):
-        c += 1
-        one_svo += line.strip()
-        if c % 3 == 0:
-            # 一个svo
-            final_svo.append(one_svo)
-            one_svo = ""
-        elif c % 3 == 1:
-            # s
-            one_svo += " "+E1_R_WORD+" "
-        else:
-            # s, v
-            one_svo += " "+R_E2_WORD+" "
-    assert c % 3 == 0
-    i = 0
-    # with open("/home/zxsong/workspace/seass/data/toutiao_word/train/subword/svo.subword.txt",
-    with open("/home/zxsong/workspace/seass/data/toutiao_word/dev/subword/svo.subword.txt",
-              "w", encoding="utf-8")as f:
-        for data_i in range(data_num):
-            svo_num = id2svo_num[data_i] if data_i in id2svo_num else 0
-            svos = []
-            for _ in range(svo_num):
-                svos.append(final_svo[i])
-                i += 1
-            f.write(json.dumps(svos, ensure_ascii=False)+"\n")
-    assert i == len(final_svo)
 
 def main():
     # article = '温州网讯昨天，广受关注的“瑞安孕妇重度烧伤”一事有了新进展：家属称，王芙蓉现阶段治疗急需A型血小板；事故初步认定为由燃气泄漏引起的爆炸事故。5月9日晚11时许，怀孕8个月的王芙蓉和母亲在厨房煮夜宵时，厨房里突然发生爆燃，一家四口不同程度烧伤。据悉，目前捐给王芙蓉一家的爱心款累计突破600万元。王芙蓉已有较清晰的意识王芙蓉的叔叔王先生说，5月20日，王芙蓉做了清理坏死皮肤的手\n术，术后恢复情况较为理想，虽还不能说话，但已有较清晰的意识。王芙蓉的丈夫和她的父母也恢复得不错。但是让家属担心的是，前天医院\n通知说王芙蓉需要A型血小板，但目前瑞安市血库存量不多，这几天他们正发动亲戚朋友捐A型血小板。瑞安市血站得知这一情况后，第一时间\n通知志愿者前来献血。据血站的相关人员介绍，目前已有4名志愿者提供血小板，可满足本周用量，但如果下周一还是需要血小板的话，就需要社会上的好心人继续献出爱心。据介绍，想为王芙蓉捐A型血小板的热心市民，可到瑞安市血站献血，也可直接到市中心血站献血，献血时向工作人员表明是献给王芙蓉即可。调查组初步认定4点结果事发后，瑞安立刻成立事故调查组展开调查。据事故调查组组长、瑞安市安监局副局长顾荣华介绍，目前该起事故已有初步认定结果：一是此次事故的性质已基本确认为燃气泄漏引起的爆炸事故；二是爆炸部位也已基本确认，是\n位于厨房间洗碗水槽下方的一个密闭的空间；三是爆炸主因，燃气泄漏扩散蔓延，与空气混合成爆炸性气体，当浓度达到爆炸极限下限时，遇\n到点火源，瞬间产生爆炸；四是排除由户外管道燃气泄漏引起爆炸的可能性。据调查组介绍，下一步将根据相关规定查清事故责任，主要是要\n查明这起事故是不是生产安全责任事故。本文转自：温州网'  # str
