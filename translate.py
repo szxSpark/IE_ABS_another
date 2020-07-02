@@ -117,8 +117,11 @@ def preprocess_pipeline(article, cut_level):
 def shell_subword(data, in_f, out_f):
     # data:只是一条数据 str
     assert type(data) == list
+    print(data)
     with open(in_f, "w", encoding="utf-8")as f:
         for one_data in data:
+            print(one_data)
+
             f.write(one_data.strip()+"\n")
     codes_file = "./subword/codes"
     voc_file = "./subword/voc.article"
