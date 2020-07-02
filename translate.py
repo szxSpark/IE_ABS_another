@@ -198,25 +198,25 @@ def load_model(model_file):
     return model, opt, vocab_dicts
 
 def evalModel(translator, data):
-    print(len(data))
-    for batch in data:
-        src, _, indices = batch
-
-        #  (2) translate
-        with torch.no_grad():
-            pred, predScore, attn, _ = translator.translateBatch(src)  # 无teacher forcing
-            pred, predScore, attn = list(zip(
-                *sorted(zip(pred, predScore, attn, indices),
-                        key=lambda x: x[-1])))[:-1]
-        #  (3) convert indexes to words
-        predBatch = []
-        for b in range(src[0].size(1)):  # B
-            n = 0
-            predBatch.append(
-                translator.buildTargetTokens(pred[b][n], None, attn[b][n])
-            )
-        predict = [' '.join(sents) for sents in predBatch]
-        print(predict)  #
+    batch = data[0]
+    # for batch in data:
+    #     src, _, indices = batch
+    #
+    #     #  (2) translate
+    #     with torch.no_grad():
+    #         pred, predScore, attn, _ = translator.translateBatch(src)  # 无teacher forcing
+    #         pred, predScore, attn = list(zip(
+    #             *sorted(zip(pred, predScore, attn, indices),
+    #                     key=lambda x: x[-1])))[:-1]
+    #     #  (3) convert indexes to words
+    #     predBatch = []
+    #     for b in range(src[0].size(1)):  # B
+    #         n = 0
+    #         predBatch.append(
+    #             translator.buildTargetTokens(pred[b][n], None, attn[b][n])
+    #         )
+    #     predict = [' '.join(sents) for sents in predBatch]
+    #     print(predict)  #
     #
     # if opt.subword:
     #     with open(ofn + ".tmp", 'w', encoding='utf-8') as of:
