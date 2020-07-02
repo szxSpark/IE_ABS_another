@@ -199,9 +199,10 @@ def load_model(model_file):
 
 def evalModel(translator, data):
     print(data)
-    # for batch, raw_batch in tqdm(zip(processed_data, raw_data)):
-    #     src, tgt, indices = batch[0]
-    #     # print(len(src))  # 5
+    for batch in data:
+        print(type(batch))
+        src, tgt, indices = batch[0]
+        # print(len(src))  # 5
     #     # print(len(tgt))  # 2
     #     src_batch, tgt_batch = raw_batch
     #
