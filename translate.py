@@ -200,12 +200,11 @@ def load_model(model_file):
 def evalModel(translator, data):
     print(data)
     for batch in data:
-        print(type(batch))
-        print(len(batch)) #12121
-        src, tgt, indices = batch[0]
-        # print(len(src))  # 5
-    #     # print(len(tgt))  # 2
-    #     src_batch, tgt_batch = raw_batch
+        src, tgt, indices = batch
+
+        print(len(src))  # 5
+        print(len(tgt))  # 2
+        # src_batch, tgt_batch = raw_batch
     #
     #     #  (2) translate
     #     with torch.no_grad():
