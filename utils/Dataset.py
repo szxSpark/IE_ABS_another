@@ -124,7 +124,7 @@ class Dataset(object):
             return out, dec_batch_extend_vocab
 
     def __getitem__(self, index):
-        assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
+        # assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
         dec_batch_extend_vocab = None
         start_idx = index * self.batchSize
         end_idx = (index + 1) * self.batchSize
