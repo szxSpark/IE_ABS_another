@@ -138,6 +138,7 @@ def load_dev_data(article):
     # 这里要subword
     subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
     subword_article = "".join(subword_article)
+    print(subword_article)
 
     # 采用融合要素抽取的模型，需要计算oie
     spo_list = extract_elements(article, LTP_DIR)
@@ -172,15 +173,14 @@ def load_dev_data(article):
             one_spo += " " + R_E2_WORD + " "
     assert c % 3 == 0
 
-    # z
+    # 构建数据
     src_batch = [subword_article]
     spo_list = [one_spo.split(" ") for one_spo in final_spo]
-    print(spo_list)
-    # spo_batch += [spo_list]
-    # # data = translator.buildData(src_batch, tgt_batch, spo_batch)
-    # # dataset.append(data)
-    # # raw.append((src_batch, tgt_batch))
-    # # return (dataset, raw)
+    spo_batch = [spo_list]
+    # data = translator.buildData(src_batch, tgt_batch, spo_batch)
+    # dataset.append(data)
+    # raw.append((src_batch, tgt_batch))
+    # return (dataset, raw)
 
 def bulid_model(vocab_dicts):
     logger.info(' * maximum batch size. %d' % opt.batch_size)
