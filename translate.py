@@ -129,7 +129,7 @@ def shell_subword(data, in_f, out_f):
     with open(out_f, "r", encoding="utf-8")as f:
         return f.readlines()
 
-def load_dev_data(article):
+def load_dev_data(translator, article):
     # 先分句，再分词
     cut_level = "word"
     cutted_article = preprocess_pipeline(article, cut_level)
@@ -174,60 +174,10 @@ def load_dev_data(article):
     src_batch = [src_tokens]
     spo_list = [one_spo.split(" ") for one_spo in final_spo]
     spo_batch = [spo_list]
-    # data = translator.buildData(src_batch, tgt_batch, spo_batch)
-    # dataset.append(data)
-    # raw.append((src_batch, tgt_batch))
-    # return (dataset, raw)
 
-def bulid_model(vocab_dicts):
-    logger.info(' * maximum batch size. %d' % opt.batch_size)
-    logger.info('Building model...')
+    data = translator.buildData(src_batch, None, spo_batch)
+    return data
 
-    encoder = Encoder(opt, vocab_dicts['src'])
-    decoder = Decoder(opt, vocab_dicts['tgt'])
-    if opt.share_embedding:
-        decoder.word_lut = encoder.word_lut
-    decIniter = DecInit(opt)
-    model = NMTModel(encoder, decoder, decIniter)
-
-    if opt.pointer_gen:
-        generator = Generator(opt, vocab_dicts)  # TODO 考虑加dropout
-    else:
-        generator = nn.Sequential(
-            nn.Linear(opt.dec_rnn_size // opt.maxout_pool_size, vocab_dicts['tgt'].size()),
-            # nn.Linear(opt.word_vec_size, dicts['tgt'].size()),  # transformer
-            nn.LogSoftmax(dim=-1)
-        )
-    if len(opt.gpus) >= 1:
-        model.cuda()
-        generator.cuda()
-    else:
-        model.cpu()
-        generator.cpu()
-    model.generator = generator
-    logger.info("model.encoder.word_lut: {}".format(id(model.encoder.word_lut)))
-    logger.info("model.decoder.word_lut: {}".format(id(model.decoder.word_lut)))
-    logger.info("embedding share: {}".format(model.encoder.word_lut is model.decoder.word_lut))
-    logger.info(repr(model))
-    param_count = sum([param.view(-1).size()[0] for param in model.parameters()])
-    logger.info('total number of parameters: %d\n\n' % param_count)
-
-    init_params(model)
-    optim = build_optim(model)
-
-    # # 断点重连
-    # logger.info(opt.checkpoint_file)
-    #
-    # if opt.checkpoint_file is not None:
-    #     logger.info("load {}".format(opt.checkpoint_file))
-    #     checkpoint = torch.load(opt.checkpoint_file)
-    #     for k, v in checkpoint['generator'].items():
-    #         checkpoint['model']["generator."+k] = v
-    #     model.load_state_dict(checkpoint['model'])
-    #     optim = checkpoint['optim']
-    #     opt.start_epoch += checkpoint['epoch']
-
-    return model, optim
 
 def init_params(model):
     logger.info("xavier_normal init")
@@ -302,31 +252,6 @@ def compute_loss(g_outputs, g_targets, generator, crit, g_p_gens, g_attn, enc_ba
         total_loss = g_loss
         report_loss = total_loss.item()
         return total_loss, report_loss, 0
-
-def save_model(model, optim, vocab_dicts, epoch, metric=None):
-    model_state_dict = model.module.state_dict() if len(opt.gpus) > 1 else model.state_dict()
-    model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
-    generator_state_dict = model.generator.module.state_dict() if len(
-        opt.gpus) > 1 else model.generator.state_dict()
-    checkpoint = {
-        'model': model_state_dict,
-        'generator': generator_state_dict,
-        'dicts': vocab_dicts,
-        'opt': opt,
-        'epoch': epoch,
-        'optim': optim
-    }
-    save_model_path = 'model'
-    if opt.save_path:
-        if not os.path.exists(opt.save_path):
-            os.makedirs(opt.save_path)
-        save_model_path = opt.save_path + os.path.sep + save_model_path
-    if metric is not None:
-        torch.save(checkpoint,
-                   '{0}_devRouge_{1}_{2}_e{3}.pt'.format(save_model_path, round(metric[0], 4), round(metric[1], 4),
-                                                         epoch))
-    else:
-        torch.save(checkpoint, '{0}_e{1}.pt'.format(save_model_path, epoch))
 
 evalModelCount = 0
 totalBatchCount = 0
@@ -537,15 +462,11 @@ def split_sentences(article):
     return new_sents
 
 
-
-def main():
-    # article = '温州网讯昨天，广受关注的“瑞安孕妇重度烧伤”一事有了新进展：家属称，王芙蓉现阶段治疗急需A型血小板；事故初步认定为由燃气泄漏引起的爆炸事故。5月9日晚11时许，怀孕8个月的王芙蓉和母亲在厨房煮夜宵时，厨房里突然发生爆燃，一家四口不同程度烧伤。据悉，目前捐给王芙蓉一家的爱心款累计突破600万元。王芙蓉已有较清晰的意识王芙蓉的叔叔王先生说，5月20日，王芙蓉做了清理坏死皮肤的手\n术，术后恢复情况较为理想，虽还不能说话，但已有较清晰的意识。王芙蓉的丈夫和她的父母也恢复得不错。但是让家属担心的是，前天医院\n通知说王芙蓉需要A型血小板，但目前瑞安市血库存量不多，这几天他们正发动亲戚朋友捐A型血小板。瑞安市血站得知这一情况后，第一时间\n通知志愿者前来献血。据血站的相关人员介绍，目前已有4名志愿者提供血小板，可满足本周用量，但如果下周一还是需要血小板的话，就需要社会上的好心人继续献出爱心。据介绍，想为王芙蓉捐A型血小板的热心市民，可到瑞安市血站献血，也可直接到市中心血站献血，献血时向工作人员表明是献给王芙蓉即可。调查组初步认定4点结果事发后，瑞安立刻成立事故调查组展开调查。据事故调查组组长、瑞安市安监局副局长顾荣华介绍，目前该起事故已有初步认定结果：一是此次事故的性质已基本确认为燃气泄漏引起的爆炸事故；二是爆炸部位也已基本确认，是\n位于厨房间洗碗水槽下方的一个密闭的空间；三是爆炸主因，燃气泄漏扩散蔓延，与空气混合成爆炸性气体，当浓度达到爆炸极限下限时，遇\n到点火源，瞬间产生爆炸；四是排除由户外管道燃气泄漏引起爆炸的可能性。据调查组介绍，下一步将根据相关规定查清事故责任，主要是要\n查明这起事故是不是生产安全责任事故。本文转自：温州网'  # str
-    article = '四海网讯，\n近日，有媒体报道称：章子怡真怀孕了!报道还援引知情人士消息称，“章子怡怀孕大概四五个月，预产期是年底前后，现在已经不接工作了。”这到底是怎么回事?消息是真是假?针对此消息，23日晚8时30分，华西都市报记者迅速联系上了与章子怡家里关系极好的知情人士，这位人士向华西都市报记者证实说：“子怡这次确实怀孕了。她已经36岁了，也该怀孕了。章子怡怀上汪峰的孩子后，子怡的父母亲十分高兴。子怡的母亲，已开始悉心照料女儿了。子怡的预产期大概是今年12月底。”当晚9时，华西都市报记者为了求证章子怡怀孕消息，又电话联系章子怡的亲哥\n哥章子男，但电话通了，一直没有人<Paragraph>接听。有关章子怡怀孕的新闻自从2013年9月份章子怡和汪峰恋情以来，就被传N遍了!不过，\n时间跨入2015年，事情却发生着微妙的变化。2015年3月21日，章子怡担任制片人的电影《从天儿降》开机，在开机发布会上几张合影，让网友又燃起了好奇心：“章子怡真的怀孕了吗?”但后据证实，章子怡的“大肚照”只是影片宣传的噱头。过了四个月的7月22日，《太平轮》新一轮宣\n传，章子怡又被发现状态不佳，不时深呼吸，不自觉想捂住肚子，又觉得不妥。然后在8月的一天，章子怡和朋友吃饭，在酒店门口被风行工作室拍到了，疑似有孕在身!今年7月11日，汪峰本来在上海要举行演唱会，后来因为台风“灿鸿”取消了。而消息人士称，汪峰原来打算在演唱会\n上当着章子怡的面宣布重大消息，而且章子怡已经赴上海准备参加演唱会了，怎知遇到台风，只好延期，相信9月26日的演唱会应该还会有惊喜大白天下吧。'
-
-    model_file = "./checkpoints/model_devRouge_0.6756_0.2952_e62.pt"
+def load_model(model_file):
     checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
     vocab_dicts = checkpoint['dicts']
     opt = checkpoint['opt']
+    opt.gpus = []  # 清除gpu设置
     encoder = Encoder(opt, vocab_dicts['src'])
     decoder = Decoder(opt, vocab_dicts['tgt'])
     if opt.share_embedding:
@@ -561,37 +482,19 @@ def main():
             # nn.Linear(opt.word_vec_size, dicts['tgt'].size()),  # transformer
             nn.LogSoftmax(dim=-1)
         )
-
-
-    for name, param in generator.named_parameters():
-        print(name)
-        print(param)
     generator.load_state_dict(checkpoint['generator'])
     model.generator = generator
-    for name, param in model.generator.named_parameters():
-        print(name)
-        print(param)
+    return model, opt, vocab_dicts
 
-    # model_state_dict = model.state_dict()
-    # model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
-    # generator_state_dict = model.generator.module.state_dict() if len(
-    #     opt.gpus) > 1 else model.generator.state_dict()
-    # checkpoint = {
-    #     'model': model_state_dict,
-    #     'generator': generator_state_dict,
-    #     'dicts': vocab_dicts,
-    #     'opt': opt,
-    #     'epoch': epoch,
-    #     'optim': optim
-    # }
-    #
-    # model = NMTModel(encoder, decoder, decIniter)
-    # model, optim = bulid_model(vocab_dicts)
+def main():
+    model_file = "./checkpoints/model_devRouge_0.6756_0.2952_e62.pt"
+    model, opt, vocab_dicts = load_model(model_file)
+    translator = Translator(opt, model, vocab_dicts)
 
-
-    # validData = load_dev_data(translator, opt.dev_input_src, opt.dev_ref,
-    #                           opt.dev_spo)  # 已经分好batch Dataset， list((src_batch, tgt_batch)))
-
+    # article = '温州网讯昨天，广受关注的“瑞安孕妇重度烧伤”一事有了新进展：家属称，王芙蓉现阶段治疗急需A型血小板；事故初步认定为由燃气泄漏引起的爆炸事故。5月9日晚11时许，怀孕8个月的王芙蓉和母亲在厨房煮夜宵时，厨房里突然发生爆燃，一家四口不同程度烧伤。据悉，目前捐给王芙蓉一家的爱心款累计突破600万元。王芙蓉已有较清晰的意识王芙蓉的叔叔王先生说，5月20日，王芙蓉做了清理坏死皮肤的手\n术，术后恢复情况较为理想，虽还不能说话，但已有较清晰的意识。王芙蓉的丈夫和她的父母也恢复得不错。但是让家属担心的是，前天医院\n通知说王芙蓉需要A型血小板，但目前瑞安市血库存量不多，这几天他们正发动亲戚朋友捐A型血小板。瑞安市血站得知这一情况后，第一时间\n通知志愿者前来献血。据血站的相关人员介绍，目前已有4名志愿者提供血小板，可满足本周用量，但如果下周一还是需要血小板的话，就需要社会上的好心人继续献出爱心。据介绍，想为王芙蓉捐A型血小板的热心市民，可到瑞安市血站献血，也可直接到市中心血站献血，献血时向工作人员表明是献给王芙蓉即可。调查组初步认定4点结果事发后，瑞安立刻成立事故调查组展开调查。据事故调查组组长、瑞安市安监局副局长顾荣华介绍，目前该起事故已有初步认定结果：一是此次事故的性质已基本确认为燃气泄漏引起的爆炸事故；二是爆炸部位也已基本确认，是\n位于厨房间洗碗水槽下方的一个密闭的空间；三是爆炸主因，燃气泄漏扩散蔓延，与空气混合成爆炸性气体，当浓度达到爆炸极限下限时，遇\n到点火源，瞬间产生爆炸；四是排除由户外管道燃气泄漏引起爆炸的可能性。据调查组介绍，下一步将根据相关规定查清事故责任，主要是要\n查明这起事故是不是生产安全责任事故。本文转自：温州网'  # str
+    article = '四海网讯，\n近日，有媒体报道称：章子怡真怀孕了!报道还援引知情人士消息称，“章子怡怀孕大概四五个月，预产期是年底前后，现在已经不接工作了。”这到底是怎么回事?消息是真是假?针对此消息，23日晚8时30分，华西都市报记者迅速联系上了与章子怡家里关系极好的知情人士，这位人士向华西都市报记者证实说：“子怡这次确实怀孕了。她已经36岁了，也该怀孕了。章子怡怀上汪峰的孩子后，子怡的父母亲十分高兴。子怡的母亲，已开始悉心照料女儿了。子怡的预产期大概是今年12月底。”当晚9时，华西都市报记者为了求证章子怡怀孕消息，又电话联系章子怡的亲哥\n哥章子男，但电话通了，一直没有人<Paragraph>接听。有关章子怡怀孕的新闻自从2013年9月份章子怡和汪峰恋情以来，就被传N遍了!不过，\n时间跨入2015年，事情却发生着微妙的变化。2015年3月21日，章子怡担任制片人的电影《从天儿降》开机，在开机发布会上几张合影，让网友又燃起了好奇心：“章子怡真的怀孕了吗?”但后据证实，章子怡的“大肚照”只是影片宣传的噱头。过了四个月的7月22日，《太平轮》新一轮宣\n传，章子怡又被发现状态不佳，不时深呼吸，不自觉想捂住肚子，又觉得不妥。然后在8月的一天，章子怡和朋友吃饭，在酒店门口被风行工作室拍到了，疑似有孕在身!今年7月11日，汪峰本来在上海要举行演唱会，后来因为台风“灿鸿”取消了。而消息人士称，汪峰原来打算在演唱会\n上当着章子怡的面宣布重大消息，而且章子怡已经赴上海准备参加演唱会了，怎知遇到台风，只好延期，相信9月26日的演唱会应该还会有惊喜大白天下吧。'
+    data = load_dev_data(translator, article)  # 已经分好batch Dataset， list((src_batch, tgt_batch)))
+    print(data)
     # trainData, vocab_dicts = load_train_data()
     # # lo
     # model, optim = bulid_model(vocab_dicts)
