@@ -544,10 +544,6 @@ def main():
 
     model_file = "./checkpoints/model_devRouge_0.6756_0.2952_e62.pt"
     checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
-    print(checkpoint['epoch'])
-    print(checkpoint['dicts'])
-    model_state_dict = checkpoint['model']
-
     vocab_dicts = checkpoint['dicts']
     opt = checkpoint['opt']
     encoder = Encoder(opt, vocab_dicts['src'])
@@ -556,6 +552,9 @@ def main():
         decoder.word_lut = encoder.word_lut
     decIniter = DecInit(opt)
     model = NMTModel(encoder, decoder, decIniter)
+    for name, param in model.named_parameters():
+        print(name)
+        input()
     model.load_state_dict(checkpoint['model'])
     print(123)
     # model_state_dict = model.state_dict()
