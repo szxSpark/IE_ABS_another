@@ -197,7 +197,7 @@ def load_model(model_file):
     model.generator = generator
     return model, opt, vocab_dicts
 
-def evalModel(translator, data):
+def predict_oneData(translator, data):
     batch = data[0]
     # for batch in data:
     src, _, indices = batch
@@ -215,47 +215,30 @@ def evalModel(translator, data):
         predBatch.append(
             translator.buildTargetTokens(pred[b][n], None, attn[b][n])
         )
-    predict = [' '.join(sents) for sents in predBatch]
-    print(predict)  #
-    #
-    # if opt.subword:
-    #     with open(ofn + ".tmp", 'w', encoding='utf-8') as of:
-    #         for p in predict:
-    #             of.write(p + '\n')
-    #     # ofn: pred_file
-    #     cmd = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(ofn + ".tmp", ofn)  # 写的是分词的
-    #     os.system(cmd)
-    #     os.remove(ofn + ".tmp")
-    #     predict = []
-    #     # opt.dev_ref 不要用subword
-    #     with open(ofn, encoding='utf-8') as f:
-    #         for line in f:
-    #             if not line:
-    #                 break
-    #             # predict.append(line.strip())
-    #             tmp_line = " ".join(list("".join(line.strip().split(" "))))
-    #             tmp_line = tmp_line.replace("< u n k >", "<unk>")
-    #             predict.append(tmp_line)  # 按照char计算指标
-    #     assert len(predict) == len(gold)
-    #     print("gold:", gold[0])
-    #     print("predict:", predict[0])
-    #     scores = rouge_calculator.compute_rouge(gold, predict)
-    #     return scores['rouge-1']['f'][0], scores['rouge-2']['f'][0]
-    # else:
-    #     if not opt.english:
-    #         for i in range(len(predict)):
-    #             tmp_line = predict[i]
-    #             tmp_line = " ".join(list("".join(predict[i].strip().split(" "))))
-    #             tmp_line = tmp_line.replace("< u n k >", "<unk>")
-    #             predict[i] = tmp_line
-    #     assert len(predict) == len(gold)
-    #     print("gold:", gold[0])
-    #     print("predict:", predict[0])
-    #     scores = rouge_calculator.compute_rouge(gold, predict)
-    #     with open(ofn, 'w', encoding='utf-8') as of:
-    #         for p in predict:
-    #             of.write(p + '\n')
-    #     return scores['rouge-1']['f'][0], scores['rouge-2']['f'][0]
+    predict = [' '.join(sents) for sents in predBatch][0]  # str
+
+    tmp_file = "./subword/predict.txt"
+    with open(tmp_file, 'w', encoding='utf-8') as of:
+        for p in predict:
+            of.write(p + '\n')
+
+    # cmd = "sed -r 's/(@@ )|(@@ ?$)//g' {} > {}".format(tmp_file, ofn)  # 写的是分词的
+    cmd = "sed -r 's/(@@ )|(@@ ?$)//g' {}".format(tmp_file)  # 写的是分词的
+    fouput = os.popen(cmd)
+    result = fouput.readlines()
+    print("result is: %s" % result)
+    # os.remove(ofn + ".tmp")
+    # predict = []
+    # # opt.dev_ref 不要用subword
+    # with open(ofn, encoding='utf-8') as f:
+    #     for line in f:
+    #         if not line:
+    #             break
+    #         # predict.append(line.strip())
+    #         tmp_line = " ".join(list("".join(line.strip().split(" "))))
+    #         tmp_line = tmp_line.replace("< u n k >", "<unk>")
+    #         predict.append(tmp_line)  # 按照char计算指标
+
 
 def main():
     model_file = "./checkpoints/model_devRouge_0.6756_0.2952_e62.pt"
