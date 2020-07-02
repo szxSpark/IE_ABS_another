@@ -151,58 +151,35 @@ def load_dev_data(article):
         e2 = [" ".join(e2)]
         spo_words.append(e1 + r + e2)
     spo_words = ["\n".join(spo) for spo in spo_words]
-    subword_article = shell_subword(spo_words, in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
-    print(subword_article)
-    # # 逆操作
-    # # hier_json = "/home/zxsong/workspace/seass/data/toutiao_word/train/train.hierarchical.combine.json"
-    # hier_json = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.hierarchical.combine.json"
-    # id2svo_num = {}
-    # for data in json.load(open(hier_json, "r", encoding="utf-8")):
-    #     svo = data["svo"]
-    #     origin_id = data['origin_id']
-    #     id2svo_num[origin_id] = len(svo)
-    #
-    # # data_f = "/home/zxsong/workspace/seass/data/toutiao_word/train/train.title.txt"
-    # data_f = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.title.txt"
-    # data_num = 0
-    # for i, title in enumerate(open(data_f, "r", encoding="utf-8")):
-    #     data_num += 1
-    #
-    # # in_f = "/home/zxsong/workspace/seass/data/toutiao_word/train/subword/svo.tmp.subword.txt"
-    # in_f = "/home/zxsong/workspace/seass/data/toutiao_word/dev/subword/svo.tmp.subword.txt"
-    #
-    # c = 0
-    # one_svo = ""
-    # final_svo = []
-    # for line in open(in_f, "r", encoding="utf-8"):
-    #     c += 1
-    #     one_svo += line.strip()
-    #     if c % 3 == 0:
-    #         # 一个svo
-    #         final_svo.append(one_svo)
-    #         one_svo = ""
-    #     elif c % 3 == 1:
-    #         # s
-    #         one_svo += " " + E1_R_WORD + " "
-    #     else:
-    #         # s, v
-    #         one_svo += " " + R_E2_WORD + " "
-    # assert c % 3 == 0
-    # i = 0
-    # # with open("/home/zxsong/workspace/seass/data/toutiao_word/train/subword/svo.subword.txt",
-    # with open("/home/zxsong/workspace/seass/data/toutiao_word/dev/subword/svo.subword.txt",
-    #           "w", encoding="utf-8")as f:
-    #     for data_i in range(data_num):
-    #         svo_num = id2svo_num[data_i] if data_i in id2svo_num else 0
-    #         svos = []
-    #         for _ in range(svo_num):
-    #             svos.append(final_svo[i])
-    #             i += 1
-    #         f.write(json.dumps(svos, ensure_ascii=False) + "\n")
-    # assert i == len(final_svo)
+    subword_article = shell_subword(spo_words, in_f="./subword/inf.spo.tmp.txt", out_f="./subword/outf.spo.tmp.txt")
 
-
-
+    # 逆操作
+    svo_num = len(spo_list)
+    c = 0
+    one_svo = ""
+    final_svo = []
+    for line in open("./subword/outf.spo.tmp.txt", "r", encoding="utf-8"):
+        c += 1
+        one_svo += line.strip()
+        if c % 3 == 0:
+            # 一个svo
+            final_svo.append(one_svo)
+            one_svo = ""
+        elif c % 3 == 1:
+            # s
+            one_svo += " " + E1_R_WORD + " "
+        else:
+            # s, v
+            one_svo += " " + R_E2_WORD + " "
+    assert c % 3 == 0
+    print(final_svo)
+    # svos = []
+    # for _ in range(svo_num):
+    #     svos.append(final_svo[i])
+    # f.write(json.dumps(svos, ensure_ascii=False) + "\n")
+    #
+    #
+    #
     src_batch = [subword_article]
     # spoline = ["章@@ 子怡 <e1_r> 孩子 <r_e2> 汪峰", "汪峰 <e1_r> 举行 演唱会 <r_e2> 上海", "汪峰 <e1_r> 取消 <r_e2> 灿鸿", "章@@ 子怡 <e1_r> 赴 <r_e2> 上海"]
     # spo_list = [one_spo.split(" ") for one_spo in json.loads(spoline, encoding="utf-8")]
