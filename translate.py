@@ -216,7 +216,7 @@ def evalModel(translator, data):
                 translator.buildTargetTokens(pred[b][n], None, attn[b][n])
             )
         predict = [' '.join(sents) for sents in predBatch]
-        print(predict)
+        print(predict)  #
     #
     # if opt.subword:
     #     with open(ofn + ".tmp", 'w', encoding='utf-8') as of:
