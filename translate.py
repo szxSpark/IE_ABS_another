@@ -61,7 +61,8 @@ if opt.gpus:
     cuda.set_device(opt.gpus[0])
 
 logger.info('My seed is {0}'.format(torch.initial_seed()))
-logger.info('My cuda seed is {0}'.format(torch.cuda.initial_seed()))
+if torch.cuda.is_available():
+    logger.info('My cuda seed is {0}'.format(torch.cuda.initial_seed()))
 
 def load_train_data():
     onlinePreprocess.seq_length = opt.max_sent_length_source  # 训练的截断
