@@ -78,6 +78,10 @@ def load_train_data():
                 len(train_data['src']))
     return trainData, vocab_dicts
 
+from pyltp import Segmentor
+LTP_DIR = "/home/user-2/zxsong_github/MonitorSystem/lib/ltp_data_v3.4.0"
+segmentor = Segmentor()
+segmentor.load(os.path.join(LTP_DIR, "cws.model"))
 def cut_sentence(sentence, cut_level="char"):
     '''
     对句子分词，采用字级别的分词方式
