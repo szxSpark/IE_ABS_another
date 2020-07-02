@@ -129,7 +129,7 @@ def shell_subword(data, in_f, out_f):
 
 def load_dev_data(article, spo):
     # 先分句，再分词
-    cut_level ="word"
+    cut_level = "word"
     cutted_article = preprocess_pipeline(article, cut_level)
     cutted_article = " ".join([word for cutted_sen in cutted_article for word in cutted_sen]).strip()
     cutted_article = cutted_article[:2000]
@@ -139,7 +139,25 @@ def load_dev_data(article, spo):
     spo_list = extract_elements(article, LTP_DIR)
     print(spo_list)
 
+    # 构建subword的svo
+    spo_words = []  # 每个集合是一个实体列表
+    for e1, r, e2 in spo_list:
+        e1 = [" ".join(e1)]
+        r = [" ".join(r)]
+        e2 = [" ".join(e2)]
+        spo_words.append(e1 + r + e2)
+    print(spo_words)
+    # out_f = "./spo.tmp.txt"
+    # c = 0
+    # with open(out_f, "w", encoding="utf-8") as f:
+    #     for _svo in spo_words:
+    #         c += 1
+    #         f.write("\n".join(_svo) + "\n")
+    #
+
+
     src_batch = [subword_article]
+    # spoline = ["章@@ 子怡 <e1_r> 孩子 <r_e2> 汪峰", "汪峰 <e1_r> 举行 演唱会 <r_e2> 上海", "汪峰 <e1_r> 取消 <r_e2> 灿鸿", "章@@ 子怡 <e1_r> 赴 <r_e2> 上海"]
     # spo_list = [one_spo.split(" ") for one_spo in json.loads(spoline, encoding="utf-8")]
     # spo_batch += [spo_list]
     # # data = translator.buildData(src_batch, tgt_batch, spo_batch)
@@ -504,73 +522,6 @@ def split_sentences(article):
         new_sents.append(sent)
     return new_sents
 
-
-
-def func1():
-    # 针对文摘
-
-    # "温州瑞安重度烧伤孕妇已有清晰意识，急需A型血小板；5月9日其煮夜宵时发生爆燃，已收捐款超600万。",
-    output_path = './eval_knowledge_triple.json'  # 输出的处理结果Json文件
-    final_output_filename = "/home/zxsong/workspace/seass/data/toutiao_word/dev/valid.hierarchical.spo.json"
-    if os.path.isfile(output_path):
-        os.remove(output_path)
-    nlp = NLP()
-    num = 1  # 知识三元组
-    data = []
-    # 分句，获得句子列表
-    article = '温州网讯昨天，广受关注的“瑞安孕妇重度烧伤”一事有了新进展：家属称，王芙蓉现阶段治疗急需A型血小板；事故初步认定为由燃气泄漏引起的爆炸事故。5月9日晚11时许，怀孕8个月的王芙蓉和母亲在厨房煮夜宵时，厨房里突然发生爆燃，一家四口不同程度烧伤。据悉，目前捐给王芙蓉一家的爱心款累计突破600万元。王芙蓉已有较清晰的意识王芙蓉的叔叔王先生说，5月20日，王芙蓉做了清理坏死皮肤的手\n术，术后恢复情况较为理想，虽还不能说话，但已有较清晰的意识。王芙蓉的丈夫和她的父母也恢复得不错。但是让家属担心的是，前天医院\n通知说王芙蓉需要A型血小板，但目前瑞安市血库存量不多，这几天他们正发动亲戚朋友捐A型血小板。瑞安市血站得知这一情况后，第一时间\n通知志愿者前来献血。据血站的相关人员介绍，目前已有4名志愿者提供血小板，可满足本周用量，但如果下周一还是需要血小板的话，就需要社会上的好心人继续献出爱心。据介绍，想为王芙蓉捐A型血小板的热心市民，可到瑞安市血站献血，也可直接到市中心血站献血，献血时向工作人员表明是献给王芙蓉即可。调查组初步认定4点结果事发后，瑞安立刻成立事故调查组展开调查。据事故调查组组长、瑞安市安监局副局长顾荣华介绍，目前该起事故已有初步认定结果：一是此次事故的性质已基本确认为燃气泄漏引起的爆炸事故；二是爆炸部位也已基本确认，是\n位于厨房间洗碗水槽下方的一个密闭的空间；三是爆炸主因，燃气泄漏扩散蔓延，与空气混合成爆炸性气体，当浓度达到爆炸极限下限时，遇\n到点火源，瞬间产生爆炸；四是排除由户外管道燃气泄漏引起爆炸的可能性。据调查组介绍，下一步将根据相关规定查清事故责任，主要是要\n查明这起事故是不是生产安全责任事故。本文转自：温州网'  # str
-    one_element = []
-    one_article = []
-    # 遍历每一篇文档中的句子
-    for origin_sentence in split_sentences(article):
-        # 句子长度太小
-        if len(origin_sentence) < 3 or len(origin_sentence) > 4000:
-            continue
-        # 分词处理
-        lemmas = nlp.segment(origin_sentence)
-        one_article.append(lemmas)
-        # 词性标注
-        words_postag = nlp.postag(lemmas)
-        # 命名实体识别
-        words_netag = nlp.netag(words_postag)
-        # 依存句法分析
-        sentence = nlp.parse(words_netag)
-        # print(sentence.to_string())
-        extractor = Extractor()
-        spo_list = extractor.extract(origin_sentence, sentence, output_path, num)
-        for spo in spo_list:
-            words = []
-            for _w in spo:
-                words.extend(_w)
-            for w in words:
-                assert w in lemmas
-        if len(spo_list) != 0:
-            one_element.extend(spo_list)
-    if len(one_article) != 0:
-        data.append({
-            "article": one_article,
-            "spo": one_element,
-        })
-
-
-def func11(article, spo):
-    # 构建subword的svo
-    flat_article = []
-    for art_sent in article:
-        flat_article.extend(art_sent)
-    spo_words = []  # 每个集合是一个实体列表
-    for e1, r, e2 in spo:
-        e1 = [" ".join(e1)]
-        r = [" ".join(r)]
-        e2 = [" ".join(e2)]
-        spo_words.append(e1 + r + e2)
-
-    out_f = "./spo.tmp.txt"
-    c = 0
-    with open(out_f, "w", encoding="utf-8") as f:
-        for _svo in spo_words:
-            c += 1
-            f.write("\n".join(_svo) + "\n")
 
 def func2():
     # 逆操作
