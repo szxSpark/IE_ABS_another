@@ -563,7 +563,7 @@ def main():
         )
 
 
-    for name, param in model.generator.named_parameters():
+    for name, param in generator.named_parameters():
         print(name)
         print(param)
     generator.load_state_dict(checkpoint['generator'])
