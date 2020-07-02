@@ -184,8 +184,7 @@ model_file = "./checkpoints/model_devRouge_0.6756_0.2952_e62.pt"
 def summarize(article):
     model, opt, vocab_dicts = load_model(model_file)
     translator = Translator(opt, model, vocab_dicts)
-
-    data = magic_data_process(translator, article)  # 已经分好batch Dataset， list((src_batch, tgt_batch)))
+    data = magic_data_process(translator, article)
     summary = predict_oneData(translator, data)
     return summary
 
