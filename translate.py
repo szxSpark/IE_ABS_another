@@ -552,16 +552,20 @@ def main():
         decoder.word_lut = encoder.word_lut
     decIniter = DecInit(opt)
     model = NMTModel(encoder, decoder, decIniter)
-    for name, param in model.named_parameters():
-        if name == 'encoder.word_lut.weight':
-            print(param)
-        # encoder.rnn.weight_ih_l0
     model.load_state_dict(checkpoint['model'])
-    for name, param in model.named_parameters():
-        if name == 'encoder.word_lut.weight':
-            print(param)
-        # encoder.word_lut.weight
-        # encoder.rnn.weight_ih_l0
+    if opt.pointer_gen:
+        generator = Generator(opt, vocab_dicts)
+    else:
+        generator = nn.Sequential(
+            nn.Linear(opt.dec_rnn_size // opt.maxout_pool_size, vocab_dicts['tgt'].size()),
+            # nn.Linear(opt.word_vec_size, dicts['tgt'].size()),  # transformer
+            nn.LogSoftmax(dim=-1)
+        )
+
+    generator.load_state_dict(checkpoint['generator'])
+    model.generator = generator
+    for name, param in model.generator.named_parameters():
+        print(name)
 
     # model_state_dict = model.state_dict()
     # model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
