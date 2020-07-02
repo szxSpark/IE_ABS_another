@@ -113,13 +113,18 @@ def preprocess_pipeline(article, cut_level):
             cutted_article.append(cutted_sentence)
     return cutted_article
 
-def shell_subword(in_f, out_f):
-    codes_file = "./codes"
-    voc_file = "./voc.article"  # ../../train/subword/voc.article
+def shell_subword(data, in_f, out_f):
+    # data:只是一条数据 str
+    with open(in_f, "w", encoding="utf-8")as f:
+        f.write(data.strip()+"\n")
+    codes_file = "./subword/codes"
+    voc_file = "./subword/voc.article"
     cmd = "subword-nmt apply-bpe -c {} --vocabulary {} --vocabulary-threshold 50 < {} > {}".format(
         codes_file, voc_file, in_f, out_f
     )
     os.system(cmd)
+    with open(out_f, "r", encoding="utf-8")as f:
+        print(f.readlines())
 
 def load_dev_data(article, spo):
     # 先分句，再分词
@@ -128,7 +133,7 @@ def load_dev_data(article, spo):
     cutted_article = " ".join([word for cutted_sen in cutted_article for word in cutted_sen]).strip()
     cutted_article = cutted_article[:2000]
     # 这里要subword
-
+    shell_subword(cutted_article, in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
 
     # src_tokens = line.strip().split(' ')
     # src_tokens = src_tokens[:2000]  # TODO
