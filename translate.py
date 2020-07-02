@@ -544,6 +544,9 @@ def main():
 
     model_file = "./checkpoints/model_devRouge_0.6756_0.2952_e62.pt"
     checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
+    print(checkpoint['epoch'])
+    print(checkpoint['dicts'])
+
     for k in checkpoint:
         print(k)
 
