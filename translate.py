@@ -200,27 +200,23 @@ def load_model(model_file):
 def evalModel(translator, data):
     print(data)
     for batch in data:
-        src, tgt, indices = batch
+        src, _, indices = batch
 
-        print(len(src))  # 5
-        print(len(tgt))  # 2
-        # src_batch, tgt_batch = raw_batch
-    #
-    #     #  (2) translate
-    #     with torch.no_grad():
-    #         pred, predScore, attn, _ = translator.translateBatch(src)  # 无teacher forcing
-    #         pred, predScore, attn = list(zip(
-    #             *sorted(zip(pred, predScore, attn, indices),
-    #                     key=lambda x: x[-1])))[:-1]
-    #     #  (3) convert indexes to words
-    #     predBatch = []
-    #     for b in range(src[0].size(1)):  # B
-    #         n = 0
-    #         predBatch.append(
-    #             translator.buildTargetTokens(pred[b][n], src_batch[b], attn[b][n])
-    #         )
-    #     gold += [' '.join(r) for r in tgt_batch]
-    #     predict += [' '.join(sents) for sents in predBatch]
+        #  (2) translate
+        with torch.no_grad():
+            pred, predScore, attn, _ = translator.translateBatch(src)  # 无teacher forcing
+            pred, predScore, attn = list(zip(
+                *sorted(zip(pred, predScore, attn, indices),
+                        key=lambda x: x[-1])))[:-1]
+        #  (3) convert indexes to words
+        predBatch = []
+        for b in range(src[0].size(1)):  # B
+            n = 0
+            predBatch.append(
+                translator.buildTargetTokens(pred[b][n], None, attn[b][n])
+            )
+        predict = [' '.join(sents) for sents in predBatch]
+        print(predict)
     #
     # if opt.subword:
     #     with open(ofn + ".tmp", 'w', encoding='utf-8') as of:

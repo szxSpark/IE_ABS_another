@@ -104,11 +104,11 @@ class Translator(object):
         tokens = self.tgt_dict.convertToLabels(pred, Constants.EOS)
         if tokens[-1] == Constants.EOS_WORD:
             tokens = tokens[:-1]  # EOS
-        if self.opt.replace_unk:
-            for i in range(len(tokens)):
-                if tokens[i] == Constants.UNK_WORD:
-                    _, maxIndex = attn[i].max(0)
-                    tokens[i] = src[maxIndex[0]]
+        # if self.opt.replace_unk:
+        #     for i in range(len(tokens)):
+        #         if tokens[i] == Constants.UNK_WORD:
+        #             _, maxIndex = attn[i].max(0)
+        #             tokens[i] = src[maxIndex[0]]
         return tokens
 
     def article2ids(self, article_words, vocab):
