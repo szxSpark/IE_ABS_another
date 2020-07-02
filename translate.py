@@ -546,11 +546,18 @@ def main():
     checkpoint = torch.load(model_file, map_location=torch.device('cpu'))
     print(checkpoint['epoch'])
     print(checkpoint['dicts'])
+    model_state_dict = checkpoint['model_state_dict']
 
-    for k in checkpoint:
-        print(k)
-
-
+    vocab_dicts = checkpoint['dicts']
+    opt = checkpoint['opt']
+    encoder = Encoder(opt, vocab_dicts['src'])
+    decoder = Decoder(opt, vocab_dicts['tgt'])
+    if opt.share_embedding:
+        decoder.word_lut = encoder.word_lut
+    decIniter = DecInit(opt)
+    model = NMTModel(encoder, decoder, decIniter)
+    model.load_state_dict(checkpoint['model'])
+    print(123)
     # model_state_dict = model.state_dict()
     # model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
     # generator_state_dict = model.generator.module.state_dict() if len(
