@@ -137,7 +137,7 @@ def load_dev_data(article):
     cut_level = "word"
     cutted_article = preprocess_pipeline(article, cut_level)
     cutted_article_str = " ".join([word for cutted_sen in cutted_article for word in cutted_sen]).strip()
-    cutted_article_str = cutted_article[:2000]
+    cutted_article_str = cutted_article_str[:2000]
     # 这里要subword
     subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
     assert len(subword_article) == 1
