@@ -125,6 +125,7 @@ class Dataset(object):
 
     def __getitem__(self, index):
         assert index < self.numBatches, "%d > %d" % (index, self.numBatches)
+        dec_batch_extend_vocab = None
         start_idx = index * self.batchSize
         end_idx = (index + 1) * self.batchSize
         srcBatch, id_svos, enc_batch_extend_vocab, extra_zeros, article_oovs, coverage, lengths = self._batchify(
