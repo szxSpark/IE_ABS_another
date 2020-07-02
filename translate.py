@@ -137,7 +137,7 @@ def load_dev_data(article):
     cutted_article_str = cutted_article_str[:2000]
     # 这里要subword
     subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
-    subword_article = "".join(subword_article)
+    subword_article = "".join([s.strip() for s in subword_article])
     print(subword_article)
 
     # 采用融合要素抽取的模型，需要计算oie
