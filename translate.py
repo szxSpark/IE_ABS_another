@@ -562,10 +562,15 @@ def main():
             nn.LogSoftmax(dim=-1)
         )
 
+
+    for name, param in model.generator.named_parameters():
+        print(name)
+        print(param)
     generator.load_state_dict(checkpoint['generator'])
     model.generator = generator
     for name, param in model.generator.named_parameters():
         print(name)
+        print(param)
 
     # model_state_dict = model.state_dict()
     # model_state_dict = {k: v for k, v in model_state_dict.items() if 'generator' not in k}
