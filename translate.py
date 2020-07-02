@@ -20,10 +20,6 @@ import os
 import re
 from utils.Constants import E1_R_WORD, R_E2_WORD
 import sys
-
-sys.path.append("..")  # 先跳出当前目录
-from core.nlp import NLP
-from core.extractor import Extractor
 from tqdm import tqdm
 import json
 
