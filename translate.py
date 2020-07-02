@@ -171,12 +171,10 @@ def load_dev_data(article):
     assert c % 3 == 0
 
     # 构建数据
+    print(src_tokens)
     src_batch = [src_tokens]
     spo_list = [one_spo.split(" ") for one_spo in final_spo]
     spo_batch = [spo_list]
-
-    print(src_batch)
-    print(spo_batch)
     # data = translator.buildData(src_batch, tgt_batch, spo_batch)
     # dataset.append(data)
     # raw.append((src_batch, tgt_batch))
