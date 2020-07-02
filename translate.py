@@ -175,6 +175,7 @@ def load_dev_data(article):
     # z
     src_batch = [subword_article]
     spo_list = [one_spo.split(" ") for one_spo in final_spo]
+    print(spo_list)
     # spo_batch += [spo_list]
     # # data = translator.buildData(src_batch, tgt_batch, spo_batch)
     # # dataset.append(data)
