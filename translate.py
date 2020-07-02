@@ -137,9 +137,7 @@ def load_dev_data(article):
     cutted_article_str = cutted_article_str[:2000]
     # 这里要subword
     subword_article = shell_subword([cutted_article_str], in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
-    print(subword_article)
     subword_article = "".join(subword_article)
-    print(subword_article)
 
     # 采用融合要素抽取的模型，需要计算oie
     spo_list = extract_elements(article, LTP_DIR)
@@ -152,7 +150,7 @@ def load_dev_data(article):
         r = [" ".join(r)]
         e2 = [" ".join(e2)]
         spo_words.append(e1 + r + e2)
-    print(spo_words)
+    spo_words = ["\n".join(spo) for spo in spo_words]
     subword_article = shell_subword(spo_words, in_f="./subword/inf.tmp.txt", out_f="./subword/outf.tmp.txt")
     print(subword_article)
     # # 逆操作
